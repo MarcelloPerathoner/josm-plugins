@@ -37,9 +37,9 @@
     <property name="plugin.resources.dir"   location="resources"/>
     <property name="plugin.doc.dir"         location="javadoc"/>
     <property name="plugin.lib.dir"         location="lib"/>
-    <property name="java.lang.version"      value="8" />
+    <property name="java.lang.version"      value="17" />
     <property name="javadoc.executable"     value="javadoc" />
-    <property name="javadoc.link"           value="https://docs.oracle.com/javase/8/docs/api" />
+    <property name="javadoc.link"           value="https://docs.oracle.com/javase/17/docs/api" />
     <property name="manifest"               value="MANIFEST"/>
     <property name="manifest.unixoid"       value="MANIFEST-unixoid"/>
     <property name="manifest.windows"       value="MANIFEST-windows"/>
@@ -112,6 +112,7 @@
     <target name="init">
         <echo>******************** Building ${plugin.jar} ********************</echo>
         <mkdir dir="${plugin.build.dir}"/>
+        <mkdir dir="${plugin.dist.dir}"/>
     </target>
     <!--
     **********************************************************
@@ -123,6 +124,7 @@
     </target>
     <target name="compile" depends="init, pre-compile, resolve-tools" unless="skip-compile">
         <echo message="compiling sources for ${plugin.jar} ..."/>
+        <echo>plugin.build.dir=${plugin.build.dir}</echo>
         <echo>plugin.dist.dir=${plugin.dist.dir}</echo>
         <echo>plugin.requires.jars=${toString:plugin.requires.jars}</echo>
         <echo>classpath=${toString:plugin.classpath}</echo>
@@ -186,6 +188,7 @@
     -->
     <target name="dist" depends="compile,javadoc,revision" unless="skip-dist">
         <echo message="creating ${ant.project.name}.jar ... "/>
+        <echo>plugin.dist.dir=${plugin.dist.dir}</echo>
         <mkdir dir="${plugin.dist.dir}"/>
         <antcall target="setup-dist" />
         <delete failonerror="no">
