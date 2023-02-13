@@ -10,6 +10,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       LANG: en_US.UTF-8
+      JOSM_DIR: core
+
     strategy:
       fail-fast: false
       matrix:
@@ -19,9 +21,16 @@ jobs:
         # java: [8, 11, 17, 18, 19]
 
     steps:
-      - name: Checkout
+      - name: Checkout Plugins
         uses: actions/checkout@v3
         with:
+          fetch-depth: 256
+
+      - name: Checkout Core
+        uses: actions/checkout@v3
+        with:
+          repository: 'MarcelloPerathoner/josm'
+          path: 'core'
           fetch-depth: 256
 
       - name: Set up JDK ${{ matrix.java }}
@@ -30,12 +39,11 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java }}
 
-      - name: Download josm.jar
-        id: download
-        run: |
-          mkdir -p core/build/libs
-          curl -L -o core/build/libs/josm.jar "https://github.com/MarcelloPerathoner/josm/releases/latest/download/josm.jar"
-          echo "JOSM_DIR=core" >> $GITHUB_ENV
+      - name: Build Core
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: jar
+          build-root-directory: core
 
       - name: Build Plugins
         run: |
