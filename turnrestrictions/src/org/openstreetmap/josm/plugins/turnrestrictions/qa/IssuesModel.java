@@ -13,8 +13,7 @@ import java.util.Set;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Way;
-import org.openstreetmap.josm.gui.tagging.TagEditorModel;
-import org.openstreetmap.josm.gui.tagging.TagModel;
+import org.openstreetmap.josm.gui.tagging.TagTableModel;
 import org.openstreetmap.josm.plugins.turnrestrictions.TurnRestrictionBuilder;
 import org.openstreetmap.josm.plugins.turnrestrictions.editor.ExceptValueModel;
 import org.openstreetmap.josm.plugins.turnrestrictions.editor.NavigationControler;
@@ -103,11 +102,11 @@ public class IssuesModel extends Observable implements Observer {
      * Checks whether there are required tags missing.
      */
     protected void checkTags(TurnRestrictionEditorModel editorModel) {
-        TagEditorModel tagEditorModel = editorModel.getTagEditorModel();
-        TagModel tag = tagEditorModel.get("type");
+        TagTableModel tagEditorModel = editorModel.getTagTableModel();
+        TagTableModel.ValueType tag = tagEditorModel.get("type");
 
         // missing marker tag for a turn restriction
-        if (tag == null || !tag.getValue().trim().equals("restriction")) {
+        if (tag == null || !tag.toString().trim().equals("restriction")) {
             issues.add(new RequiredTagMissingError(this, "type", "restriction"));
         }
 
@@ -115,8 +114,8 @@ public class IssuesModel extends Observable implements Observer {
         tag = tagEditorModel.get("restriction");
         if (tag == null) {
             issues.add(new MissingRestrictionTypeError(this));
-        } else if (!TurnRestrictionType.isStandardTagValue(tag.getValue())) {
-            issues.add(new IllegalRestrictionTypeError(this, tag.getValue()));
+        } else if (!TurnRestrictionType.isStandardTagValue(tag.toString())) {
+            issues.add(new IllegalRestrictionTypeError(this, tag.toString()));
         }
 
         // non-standard value for the 'except' tag?

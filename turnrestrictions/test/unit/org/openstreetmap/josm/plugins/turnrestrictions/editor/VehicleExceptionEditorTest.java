@@ -9,7 +9,6 @@ import javax.swing.JFrame;
 import org.junit.Ignore;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
-import org.openstreetmap.josm.gui.tagging.TagModel;
 
 /**
  * Simple test application to test the vehicle exception editor
@@ -30,7 +29,7 @@ public class VehicleExceptionEditorTest extends JFrame {
         editor = new VehicleExceptionEditor(model);
         c.add(editor, BorderLayout.CENTER);
 
-        model.getTagEditorModel().add(new TagModel("except", "non-standard-value"));
+        model.getTagTableModel().put("except", "non-standard-value");
     }
 
     public VehicleExceptionEditorTest() {

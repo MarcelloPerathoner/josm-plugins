@@ -15,7 +15,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.table.TableCellEditor;
 
+import org.openstreetmap.josm.gui.tagging.TagEditorPanel;
 import org.openstreetmap.josm.gui.tagging.TagTable;
+import org.openstreetmap.josm.gui.tagging.TagTableModel;
 import org.openstreetmap.josm.gui.tagging.ac.AutoCompletionList;
 import org.openstreetmap.josm.gui.tagging.ac.AutoCompletionManager;
 import org.openstreetmap.josm.plugins.tageditor.ac.IAutoCompletionListListener;
@@ -61,77 +63,6 @@ public class TagEditor extends JPanel implements IAutoCompletionListListener {
     private TagTable tblTagEditor;
     private PresetManager presetManager;
 
-     /**
-     * builds the panel with the button row
-     *
-     * @return the panel
-     */
-    protected JPanel buildButtonsPanel() {
-        JPanel pnl = new JPanel();
-        pnl.setLayout(new BoxLayout(pnl, BoxLayout.Y_AXIS));
-
-        // add action
-        JButton btn;
-        pnl.add(btn = new JButton(tblTagEditor.getAddAction()));
-        btn.setMargin(new Insets(0, 0, 0, 0));
-        tblTagEditor.addComponentNotStoppingCellEditing(btn);
-
-        // delete action
-        pnl.add(btn = new JButton(tblTagEditor.getDeleteAction()));
-        btn.setMargin(new Insets(0, 0, 0, 0));
-        tblTagEditor.addComponentNotStoppingCellEditing(btn);
-        return pnl;
-    }
-
-    public void addComponentNotStoppingCellEditing(Component c) {
-        tblTagEditor.addComponentNotStoppingCellEditing(c);
-    }
-
-    /**
-     * builds the GUI
-     */
-    protected JPanel buildTagEditorPanel() {
-        JPanel pnl = new JPanel(new GridBagLayout());
-
-        DefaultListSelectionModel rowSelectionModel = new DefaultListSelectionModel();
-        DefaultListSelectionModel colSelectionModel = new DefaultListSelectionModel();
-
-        tagEditorModel = new TagEditorModel(rowSelectionModel, colSelectionModel);
-
-        // build the scrollable table for editing tag names and tag values
-        //
-        tblTagEditor = new TagTable(tagEditorModel, 0);
-        tblTagEditor.setTagCellEditor(new TagSpecificationAwareTagCellEditor());
-        TagTableCellRenderer renderer = new TagTableCellRenderer();
-        tblTagEditor.getColumnModel().getColumn(0).setCellRenderer(renderer);
-        tblTagEditor.getColumnModel().getColumn(1).setCellRenderer(renderer);
-
-        final JScrollPane scrollPane = new JScrollPane(tblTagEditor);
-        JPanel pnlTagTable = new JPanel(new BorderLayout());
-        pnlTagTable.add(scrollPane, BorderLayout.CENTER);
-
-        GridBagConstraints gc = new GridBagConstraints();
-
-        // -- buttons panel
-        //
-        gc.fill = GridBagConstraints.VERTICAL;
-        gc.weightx = 0.0;
-        gc.weighty = 1.0;
-        gc.anchor = GridBagConstraints.NORTHWEST;
-        pnl.add(buildButtonsPanel(), gc);
-
-        // -- the panel with the editor table
-        //
-        gc.gridx = 1;
-        gc.fill = GridBagConstraints.BOTH;
-        gc.weightx = 1.0;
-        gc.weighty = 1.0;
-        gc.anchor = GridBagConstraints.CENTER;
-        pnl.add(pnlTagTable, gc);
-
-        return pnl;
-    }
-
     /**
      * builds the GUI
      *
@@ -139,7 +70,7 @@ public class TagEditor extends JPanel implements IAutoCompletionListListener {
     protected void build() {
         setLayout(new BorderLayout());
 
-        add(buildTagEditorPanel(), BorderLayout.CENTER);
+        add(new TagEditorPanel(tagEditorModel, 0), BorderLayout.CENTER);
 
         // build the preset manager which shows a list of applied presets
         //
@@ -159,7 +90,7 @@ public class TagEditor extends JPanel implements IAutoCompletionListListener {
      * replies the tag editor model
      * @return the tag editor model
      */
-    public TagEditorModel getTagEditorModel() {
+    public TagTableModel getTagEditorModel() {
         return tagEditorModel;
     }
 
@@ -195,7 +126,7 @@ public class TagEditor extends JPanel implements IAutoCompletionListListener {
         tblTagEditor.requestFocusInCell(0, 0);
     }
 
-    public TagEditorModel getModel() {
+    public TagTableModel getModel() {
         return tagEditorModel;
     }
 }

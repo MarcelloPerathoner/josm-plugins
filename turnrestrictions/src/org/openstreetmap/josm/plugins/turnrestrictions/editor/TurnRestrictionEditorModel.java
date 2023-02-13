@@ -3,6 +3,7 @@ package org.openstreetmap.josm.plugins.turnrestrictions.editor;
 
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Set;
 
@@ -28,8 +29,7 @@ import org.openstreetmap.josm.data.osm.event.RelationMembersChangedEvent;
 import org.openstreetmap.josm.data.osm.event.TagsChangedEvent;
 import org.openstreetmap.josm.data.osm.event.WayNodesChangedEvent;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
-import org.openstreetmap.josm.gui.tagging.TagEditorModel;
-import org.openstreetmap.josm.gui.tagging.TagModel;
+import org.openstreetmap.josm.gui.tagging.TagTableModel;
 import org.openstreetmap.josm.plugins.turnrestrictions.qa.IssuesModel;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 
@@ -63,7 +63,7 @@ public class TurnRestrictionEditorModel extends Observable implements DataSetLis
     }
 
     private OsmDataLayer layer;
-    private final TagEditorModel tagEditorModel = new TagEditorModel();
+    private final TagTableModel tagTableModel = new TagTableModel(null);
     private RelationMemberEditorModel memberModel;
     private IssuesModel issuesModel;
     private NavigationControler navigationControler;
@@ -85,7 +85,7 @@ public class TurnRestrictionEditorModel extends Observable implements DataSetLis
         memberModel.addTableModelListener(new RelationMemberModelListener());
         issuesModel = new IssuesModel(this);
         addObserver(issuesModel);
-        tagEditorModel.addTableModelListener(new TagEditorModelObserver());
+        tagTableModel.addTableModelListener(new TagEditorModelObserver());
         selectionModel = new JosmSelectionListModel(layer);
     }
 
@@ -181,9 +181,9 @@ public class TurnRestrictionEditorModel extends Observable implements DataSetLis
         memberModel.populate(turnRestriction);
 
         // make sure we have a restriction tag
-        TagCollection tags = TagCollection.from(turnRestriction);
-        tags.setUniqueForKey("type", "restriction");
-        tagEditorModel.initFromTags(tags);
+        Map<String, String> tags = turnRestriction.getKeys();
+        tags.put("type", "restriction");
+        tagTableModel.initFromMap(tags);
 
         setChanged();
         notifyObservers();
@@ -219,22 +219,20 @@ public class TurnRestrictionEditorModel extends Observable implements DataSetLis
      */
     public void apply(Relation turnRestriction) {
         CheckParameterUtil.ensureParameterNotNull(turnRestriction, "turnRestriction");
-        TagCollection tags = tagEditorModel.getTagCollection();
+        Map<String, String> tags = tagTableModel.getTags();
         turnRestriction.removeAll();
-        tags.applyTo(turnRestriction);
+        turnRestriction.putAll(tags);
         memberModel.applyTo(turnRestriction);
     }
 
     /**
      * Replies the current tag value for the tag <tt>restriction</tt>.
-     * The empty tag, if there isn't a tag <tt>restriction</tt>.
+     * The empty string, if there isn't a tag <tt>restriction</tt>.
      *
      * @return the tag value
      */
     public String getRestrictionTagValue() {
-        TagCollection tags = tagEditorModel.getTagCollection();
-        if (!tags.hasTagsFor("restriction")) return "";
-        return tags.getJoinedValues("restriction");
+        return tagTableModel.getTags().getOrDefault("restriction", "");
     }
 
     /**
@@ -245,14 +243,9 @@ public class TurnRestrictionEditorModel extends Observable implements DataSetLis
      */
     public void setRestrictionTagValue(String value) {
         if (value == null || value.trim().equals("")) {
-            tagEditorModel.delete("restriction");
+            tagTableModel.put("restriction", null);
         } else {
-            TagModel tm = tagEditorModel.get("restriction");
-            if (tm != null) {
-                tm.setValue(value);
-            } else {
-                tagEditorModel.prepend(new TagModel("restriction", value.trim().toLowerCase()));
-            }
+            tagTableModel.put("restriction", value.trim().toLowerCase());
         }
         setChanged();
         notifyObservers();
@@ -312,8 +305,8 @@ public class TurnRestrictionEditorModel extends Observable implements DataSetLis
      *
      * @return the tag  editor model
      */
-    public TagEditorModel getTagEditorModel() {
-        return tagEditorModel;
+    public TagTableModel getTagTableModel() {
+        return tagTableModel;
     }
 
     /**
@@ -345,38 +338,27 @@ public class TurnRestrictionEditorModel extends Observable implements DataSetLis
      * if the tag doesn't exist.
      */
     public ExceptValueModel getExcept() {
-        TagModel tag = tagEditorModel.get("except");
-        if (tag == null) return new ExceptValueModel("");
-        return new ExceptValueModel(tag.getValue());
+        return new ExceptValueModel(tagTableModel.getTags().getOrDefault("except", ""));
     }
 
     /**
      * Sets the current value of the tag "except". Removes the
-     * tag is {@code value} is null or consists of white
+     * tag if {@code value} is null or consists of white
      * space only.
      *
      * @param value the new value for 'except'
      */
     public void setExcept(ExceptValueModel value) {
-        if (value == null || value.getValue().equals("")) {
-            if (tagEditorModel.get("except") != null) {
-                tagEditorModel.delete("except");
-                setChanged();
-                notifyObservers();
+        ExceptValueModel oldValue = getExcept();
+        if (!oldValue.equals(value)) {
+            if (value == null) {
+                tagTableModel.put("except", null);
+            } else {
+                String val = value.getValue().trim();
+                tagTableModel.put("except", val.isEmpty() ? null : val);
             }
-            return;
-        }
-        TagModel tag = tagEditorModel.get("except");
-        if (tag == null) {
-            tagEditorModel.prepend(new TagModel("except", value.getValue()));
             setChanged();
             notifyObservers();
-        } else {
-            if (!tag.getValue().equals(value.getValue())) {
-                tag.setValue(value.getValue().trim());
-                setChanged();
-                notifyObservers();
-            }
         }
     }
 

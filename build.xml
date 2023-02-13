@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project name="josm-plugins" default="dist" basedir="." xmlns:if="ant:if" xmlns:unless="ant:unless">
-    <target name="compile_josm" unless="skip-josm">
-        <ant dir="../core" target="dist"/>
-    </target>
-    <target name="compile_josm_test" unless="skip-josm">
-        <ant dir="../core" target="test-compile"/>
-    </target>
     <!-- For Java specific stuff by version -->
     <condition property="isJava11"><matches string="${ant.java.version}" pattern="1[1-9]" /></condition>
     <!-- Specific plugins -->
@@ -19,11 +13,11 @@
                                             utilsplugin2/build.xml
                                             log4j/build.xml
                                             apache-commons/build.xml
-                                            apache-http/build.xml
-                                            Mapillary/build.xml
-                                            austriaaddresshelper/build.xml"/>
+                                            apache-http/build.xml"/>
     <property name="javafx_plugins" value="javafx/build.xml
                                            MicrosoftStreetside/build.xml"/>
+    <property name="obsolete_plugins" value="tageditor/build.xml
+                                            tagging-preset-tester/build.xml"/>
     <macrodef name="iterate">
         <attribute name="target"/>
         <sequential>
@@ -31,7 +25,7 @@
                 <filelist dir="." files="${ordered_plugins}"/>
                 <!-- Build JavaFX plugins only with Java 11+ -->
                 <filelist dir="." files="${javafx_plugins}" if:set="isJava11"/>
-                <fileset  dir="." includes="*/build.xml" excludes="00_*/build.xml *.wip/build.xml ${javafx_plugins} ${ordered_plugins}"/>
+                <fileset  dir="." includes="*/build.xml" excludes="00_*/build.xml *.wip/build.xml ${javafx_plugins} ${ordered_plugins} ${obsolete_plugins}"/>
             </subant>
         </sequential>
     </macrodef>
@@ -41,8 +35,7 @@
     <target name="compile">
         <iterate target="compile"/>
     </target>
-    <target name="dist" depends="compile_josm">
-        <mkdir dir="../dist"/>
+    <target name="dist">
         <iterate target="dist"/>
         <property name="skip-dist" value="true"/>
         <property name="skip-compile" value="true"/>
@@ -51,7 +44,7 @@
     <target name="install" depends="dist">
         <iterate target="install"/>
     </target>
-    <target name="test" depends="compile_josm_test">
+    <target name="test">
         <iterate target="test"/>
     </target>
     <target name="checkstyle">

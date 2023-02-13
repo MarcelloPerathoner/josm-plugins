@@ -21,25 +21,25 @@ import org.openstreetmap.josm.spi.preferences.PreferenceChangeEvent;
 import org.openstreetmap.josm.spi.preferences.PreferenceChangedListener;
 import org.openstreetmap.josm.tools.Shortcut;
 
-public class OsmInspectorPlugin extends Plugin 
-implements ZoomChangeListener, 
+public class OsmInspectorPlugin extends Plugin
+implements ZoomChangeListener,
 MouseListener, PreferenceChangedListener, DownloadSelection{
 
 	/** The JOSM user identity manager, it is used for obtaining the user name */
     private final UserIdentityManager userIdentityManager;
-   
+
 
     /** The bounding box from where the MapDust bugs are down-loaded */
     //private Bounds bBox;
 
     private OsmInspectorLayer inspectorLayer;
-    
+
 	public OsmInspectorPlugin(PluginInformation info) {
 		super(info);
 		userIdentityManager = UserIdentityManager.getInstance();
 		initializePlugin();
 	}
-	
+
 	/**
      * Initialize the <code>OsmInspectorPlugin</code> object. Creates the
      * <code>OsmInspectorGUI</code> and initializes the following variables with
@@ -50,7 +50,7 @@ MouseListener, PreferenceChangedListener, DownloadSelection{
                 KeyEvent.VK_1, Shortcut.ALT_SHIFT);
         //String name = "Osm Inspector error reports";
         //String tooltip = "Activates the Osm Inspector reporter plugin";
-        
+
         /* add default values for static variables */
         Config.getPref().put("osmInspector.nickname", "osmi");
         Config.getPref().putBoolean("osmInspector.showBugs", true);
@@ -69,7 +69,7 @@ MouseListener, PreferenceChangedListener, DownloadSelection{
             if (MainApplication.getMap() != null && MainApplication.getMap().mapView != null) {
                 /* add MapdustGUI */
                 MainApplication.getMap().setBounds(newFrame.getBounds());
-                
+
                 /* add Listeners */
                 NavigatableComponent.addZoomChangeListener(this);
                 MainApplication.getMap().mapView.addMouseListener(this);
@@ -77,14 +77,14 @@ MouseListener, PreferenceChangedListener, DownloadSelection{
                 /* put username to preferences */
                 Config.getPref().put("osmInspector.josmUserName",
                         userIdentityManager.getUserName());
-                MainApplication.getToolbar().control.add( new ImportOsmInspectorBugsAction( this ) );
+                MainApplication.getToolbar().toolbar.add( new ImportOsmInspectorBugsAction( this ) );
             }
         }
 	}
 
 	@Override
 	public void zoomChanged() {
-		
+
 	}
 
 	@Override
@@ -99,27 +99,27 @@ MouseListener, PreferenceChangedListener, DownloadSelection{
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		
+
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		
+
 	}
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		
+
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		
+
 	}
 
 	@Override
 	public void preferenceChanged(PreferenceChangeEvent e) {
-		
+
 	}
 
 	public OsmInspectorLayer getLayer()

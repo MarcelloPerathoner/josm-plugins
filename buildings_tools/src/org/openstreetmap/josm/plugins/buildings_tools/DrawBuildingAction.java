@@ -165,8 +165,8 @@ public class DrawBuildingAction extends MapMode implements MapViewPaintable, Dat
         MapFrame map = MainApplication.getMap();
         if (map == null || map.mapView == null)
             return;
-        map.statusLine.setHeading(-1);
-        map.statusLine.setAngle(-1);
+        map.statusLine.setHeading(null);
+        map.statusLine.setAngle(null);
         building.reset();
         map.mapView.repaint();
         updateStatusLine();

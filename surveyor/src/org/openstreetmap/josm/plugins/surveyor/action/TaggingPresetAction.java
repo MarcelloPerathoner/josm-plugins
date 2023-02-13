@@ -3,11 +3,9 @@ package org.openstreetmap.josm.plugins.surveyor.action;
 
 import java.util.List;
 
-import javax.swing.Action;
-
 import org.openstreetmap.josm.data.coor.LatLon;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.tagging.presets.TaggingPreset;
-import org.openstreetmap.josm.gui.tagging.presets.TaggingPresets;
 import org.openstreetmap.josm.plugins.surveyor.GpsActionEvent;
 import org.openstreetmap.josm.plugins.surveyor.SurveyorAction;
 
@@ -36,20 +34,19 @@ public class TaggingPresetAction implements SurveyorAction {
 //        Main.map.repaint();
 
         // call an annotationpreset to add additional properties...
-        preset.actionPerformed(null);
+        preset.getAction().actionPerformed(null);
 
     }
 
     @Override
     public void setParameters(List<String> parameters) {
-        if (parameters.size() == 0) {
+        if (parameters.isEmpty()) {
             throw new IllegalArgumentException("No annotation preset name given!");
         }
         presetName = parameters.get(0);
         preset = getAnnotationPreset(presetName);
         if (preset == null) {
             System.err.println("No valid preset '" + parameters.get(0) + "' found - disable action!");
-            return;
         }
     }
 
@@ -59,9 +56,9 @@ public class TaggingPresetAction implements SurveyorAction {
      * @return  the preset with the given name.
      */
     protected TaggingPreset getAnnotationPreset(String name) {
-        for (TaggingPreset preset : TaggingPresets.getTaggingPresets()) {
-            if (name.equals(preset.getValue(Action.NAME))) {
-                return preset;
+        for (TaggingPreset taggingPreset : MainApplication.getTaggingPresets().getAllPresets()) {
+            if (name.equals(taggingPreset.getName())) {
+                return taggingPreset;
             }
         }
         return null;

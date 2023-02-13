@@ -18,11 +18,9 @@
     <!--<property name="plugin.requires" value="..."/>-->
     <!--<property name="plugin.stage" value="..."/>-->
     <property name="plugin.canloadatruntime" value="true"/>
-    
-    <property name="josm" location="../../core/dist/josm-custom.jar"/>
-    <property name="plugin.dist.dir" value="../../dist"/>
+
     <property name="plugin.javadoc.dir" location="javadoc"/>
-	
+
     <!-- ** include targets that all plugins have in common ** -->
     <import file="../build-common.xml"/>
     <!-- ** internationalization ** -->
@@ -56,7 +54,7 @@ msgstr ""
                 <pathelement location="${josm}"/>
             </classpath>
             <!-- Paths are relative to javadoc destdir (${plugin.javadoc.dir}). -->
-            <link href="../../../core/javadoc/"/>
+            <link href="${josm.dir}/javadoc/"/>
             <link href="https://josm.openstreetmap.de/doc/"/>
             <link href="https://docs.oracle.com//javase/8/docs/api/"/>
         </javadoc>

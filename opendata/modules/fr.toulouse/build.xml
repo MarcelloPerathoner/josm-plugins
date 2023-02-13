@@ -3,8 +3,6 @@
     <!-- enter the SVN commit message -->
     <property name="commit.message" value="Commit message"/>
     <!-- should not be necessary to change the following properties -->
-    <property name="josm" location="../../../../core/dist/josm-custom.jar"/>
-    <property name="plugin.dist.dir" value="../../../../dist"/>
     <property name="opendata" location="${plugin.dist.dir}/opendata.jar"/>
     <property name="apachecommons" location="${plugin.dist.dir}/apache-commons.jar"/>
     <property name="utilsplugin2" location="${plugin.dist.dir}/utilsplugin2.jar"/>
@@ -142,7 +140,7 @@
         <copy file="${module.jar}" todir="${josm.plugins.dir}/opendata/modules" overwrite="yes"/>
     </target>
     <!--
-    ************************** Publishing the module *********************************** 
+    ************************** Publishing the module ***********************************
     -->
     <!-- commits the source tree for this module -->
     <target name="commit-current">
@@ -173,10 +171,10 @@
     <target name="commit-dist">
         <echo>
     ***** Properties of published ${module.jar} *****
-    Commit message    : '${commit.message}'                    
+    Commit message    : '${commit.message}'
     Module-Version    : ${version.entry.commit.revision}
-    ***** / Properties of published ${module.jar} *****                    
-                        
+    ***** / Properties of published ${module.jar} *****
+
     Now committing ${module.jar} ...
     </echo>
         <exec append="true" output="svn.log" executable="svn" failifexecutionfails="false">

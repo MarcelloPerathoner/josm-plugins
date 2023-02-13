@@ -6,14 +6,21 @@ import static org.openstreetmap.josm.tools.I18n.tr;
 import java.awt.BorderLayout;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.util.EnumSet;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 
+import org.openstreetmap.josm.data.tagging.ac.AutoCompletionItem;
 import org.openstreetmap.josm.gui.help.HelpUtil;
 import org.openstreetmap.josm.gui.tagging.TagEditorPanel;
+import org.openstreetmap.josm.gui.tagging.TagTable;
+import org.openstreetmap.josm.gui.tagging.ac.AutoCompComboBox;
+import org.openstreetmap.josm.gui.tagging.ac.TagTableUtils;
+import org.openstreetmap.josm.gui.tagging.presets.TaggingPresetType;
+import org.openstreetmap.josm.gui.util.TableHelper;
 import org.openstreetmap.josm.gui.widgets.HtmlPanel;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 
@@ -40,10 +47,30 @@ public class AdvancedEditorPanel extends JPanel {
               + "</body></html>"
         );
         pnl.add(msg, BorderLayout.NORTH);
-        pnlTagEditor = new TagEditorPanel(model.getTagEditorModel(), null, 0);
-        pnlTagEditor.initAutoCompletion(model.getLayer());
+        pnlTagEditor = new TagEditorPanel(model.getTagTableModel(), 0);
+
+        TagTableUtils tagTableUtils = new TagTableUtils(model.getTagTableModel(), this::getContextKey);
+        tagTableUtils.setTypes(EnumSet.of(TaggingPresetType.RELATION));
+
+        // setting up the tag table
+        AutoCompComboBox<AutoCompletionItem> keyEditor = tagTableUtils.getKeyEditor(null);
+        AutoCompComboBox<AutoCompletionItem> valueEditor = tagTableUtils.getValueEditor(null);
+
+        TagTable tagTable = pnlTagEditor.getTable();
+        tagTable.setKeyEditor(keyEditor);
+        tagTable.setValueEditor(valueEditor);
+        tagTable.setRowHeight(keyEditor.getEditorComponent().getPreferredSize().height);
+
         pnl.add(pnlTagEditor, BorderLayout.CENTER);
         return pnl;
+    }
+
+    String getContextKey() {
+        TagTable tagTable = pnlTagEditor.getTable();
+        int row = tagTable.getEditingRow();
+        if (row == -1)
+            row = tagTable.getSelectedRow();
+        return tagTable.getKey(row);
     }
 
     /**
@@ -59,6 +86,7 @@ public class AdvancedEditorPanel extends JPanel {
         pnl.add(msg, BorderLayout.NORTH);
 
         tblRelationMemberEditor = new RelationMemberTable(model);
+        TableHelper.setRowHeight(tblRelationMemberEditor);
         JScrollPane pane = new JScrollPane(tblRelationMemberEditor);
         pane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         pane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);

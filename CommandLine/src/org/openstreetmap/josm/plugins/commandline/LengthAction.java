@@ -91,8 +91,8 @@ public class LengthAction extends MapMode implements MapViewPaintable, AWTEventL
         MapFrame map = MainApplication.getMap();
         if (map == null || map.mapView == null)
             return;
-        map.statusLine.setHeading(-1);
-        map.statusLine.setAngle(-1);
+        map.statusLine.setHeading(null);
+        map.statusLine.setAngle(null);
         updateStatusLine();
         parentPlugin.abortInput();
     }

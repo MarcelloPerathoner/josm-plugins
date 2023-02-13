@@ -11,15 +11,25 @@
 **
 -->
 <project name="plugin_common" basedir="." xmlns:jacoco="antlib:org.jacoco.ant" xmlns:if="ant:if" xmlns:unless="ant:unless" xmlns:ivy="antlib:org.apache.ivy.ant">
+    <property environment="env"/>
+    <property name="env.JOSM_DIR" value="../../core"/> <!-- if not found in enviroment -->
 
-    <property name="josm"                   location="../../core/dist/josm-custom.jar"/>
-    <property name="josm.ivy"               location="../../core/ivy.xml"/>
-    <property name="josm.ivysettings"       location="../../core/ivysettings.xml"/>
-    <property name="josm.test.build.dir"    location="../../core/test/build"/>
-    <property name="jmockit.jar"            location="../00_core_test_lib/jmockit.jar"/>
-    <property name="checkstyle-build.dir"   location="../00_core_tools/checkstyle/build"/>
-    <property name="annotations.jar"        location="../00_core_tools/spotbugs/spotbugs-annotations.jar"/>
-    <property name="core.tools.ivy"         location="../00_core_tools/ivy.xml"/>
+    <!-- the directory where josm core is checked out -->
+    <property name="josm.dir"               location="${env.JOSM_DIR}"/>
+    <!-- the josm.jar to build the plugins against -->
+    <property name="josm.jar"               location="${josm.dir}/build/libs/josm.jar"/>
+    <!-- the root directory of the compiled core test classes (must contain org/openstreetmap/test/testutils) -->
+    <property name="josm.test.build.dir"    location="${josm.dir}/build/classes/java/test"/>
+    <!-- the directory where the plugin jars are copied to -->
+    <property name="plugin.dist.dir"        location="${josm.dir}/dist"/>
+
+    <property name="josm.ivy"               location="${josm.dir}/ivy.xml"/>
+    <property name="josm.ivysettings"       location="${josm.dir}/ivysettings.xml"/>
+    <property name="josm.test.dir"          location="${josm.dir}/test"/>
+    <property name="jmockit.jar"            location="${josm.dir}/test/lib/jmockit.jar"/>
+    <property name="checkstyle-build.dir"   location="${josm.dir}/tools/checkstyle/build"/>
+    <property name="annotations.jar"        location="${josm.dir}/tools/spotbugs/spotbugs-annotations.jar"/>
+    <property name="core.tools.ivy"         location="${josm.dir}/tools/ivy.xml"/>
     <property name="plugin.tools.dir"       location="../00_tools"/>
     <property name="plugin.build.dir"       location="build"/>
     <property name="plugin.test.dir"        location="test"/>
@@ -27,8 +37,6 @@
     <property name="plugin.resources.dir"   location="resources"/>
     <property name="plugin.doc.dir"         location="javadoc"/>
     <property name="plugin.lib.dir"         location="lib"/>
-    <!-- this is the directory where the plugin jar is copied to -->
-    <property name="plugin.dist.dir"        location="../../dist"/>
     <property name="java.lang.version"      value="8" />
     <property name="javadoc.executable"     value="javadoc" />
     <property name="javadoc.link"           value="https://docs.oracle.com/javase/8/docs/api" />
@@ -83,7 +91,7 @@
     <fileset id="jaxb.jars" dir="${plugin.tools.dir}/jaxb-ri/lib" includes="**/*.jar"/>
 
     <path id="plugin.classpath">
-        <pathelement location="${josm}"/>
+        <pathelement location="${josm.jar}"/>
         <fileset dir="${plugin.lib.dir}" erroronmissingdir="no">
             <include name="**/*.jar"/>
             <exclude name="**/*-sources.jar"/>
@@ -102,6 +110,7 @@
     **********************************************************
     -->
     <target name="init">
+        <echo>******************** Building ${plugin.jar} ********************</echo>
         <mkdir dir="${plugin.build.dir}"/>
     </target>
     <!--
@@ -114,6 +123,9 @@
     </target>
     <target name="compile" depends="init, pre-compile, resolve-tools" unless="skip-compile">
         <echo message="compiling sources for ${plugin.jar} ..."/>
+        <echo>plugin.dist.dir=${plugin.dist.dir}</echo>
+        <echo>plugin.requires.jars=${toString:plugin.requires.jars}</echo>
+        <echo>classpath=${toString:plugin.classpath}</echo>
         <path id="jdk8.boot.classpath">
             <path refid="errorprone_javac.classpath"/>
             <fileset refid="jaxb.jars"/>
@@ -535,9 +547,9 @@
 
     <macrodef name="init-test-preferences">
         <sequential>
-            <copy file="../00_core_test_config/preferences.template.xml" tofile="../00_core_test_config/unit-josm.home/preferences.xml"/>
-            <replace file="../00_core_test_config/unit-josm.home/preferences.xml" encoding="UTF-8" token="@OSM_USERNAME@" value="${osm.username}"/>
-            <replace file="../00_core_test_config/unit-josm.home/preferences.xml" encoding="UTF-8" token="@OSM_PASSWORD@" value="${osm.password}"/>
+            <copy file="${josm.test.dir}/config/preferences.template.xml" tofile="${josm.test.dir}/config/unit-josm.home/preferences.xml"/>
+            <replace file="${josm.test.dir}/config/unit-josm.home/preferences.xml" encoding="UTF-8" token="@OSM_USERNAME@" value="${osm.username}"/>
+            <replace file="${josm.test.dir}/config/unit-josm.home/preferences.xml" encoding="UTF-8" token="@OSM_PASSWORD@" value="${osm.password}"/>
         </sequential>
     </macrodef>
     <target name="check-test">
@@ -550,13 +562,13 @@
         <init-test-preferences/>
         <ivy:settings file="${josm.ivysettings}" id="ivy.core.settings"/>
         <ivy:resolve settingsRef="ivy.core.settings" file="${josm.ivy}" conf="test,jacocoant"/>
-        <ivy:retrieve settingsRef="ivy.core.settings" pattern="../00_core_test_lib/[artifact].[ext]" conf="test"/>
-        <ivy:retrieve settingsRef="ivy.core.settings" pattern="../00_core_tools/[conf].[ext]" conf="jacocoant"/>
-        <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml" classpath="../00_core_tools/jacocoant.jar"/>
+        <ivy:retrieve settingsRef="ivy.core.settings" pattern="${josm.test.dir}/lib/[artifact].[ext]" conf="test"/>
+        <ivy:retrieve settingsRef="ivy.core.settings" pattern="${josm.dir}/tools/[conf].[ext]" conf="jacocoant"/>
+        <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml" classpath="${josm.dir}/tools/jacocoant.jar"/>
         <path id="test.classpath">
             <!-- JMockit must be included before JUnit in the classpath -->
             <pathelement path="${jmockit.jar}"/>
-            <fileset dir="../00_core_test_lib">
+            <fileset dir="${josm.test.dir}/lib">
                 <include name="**/*.jar"/>
                 <exclude name="**/jmockit*.jar"/>
             </fileset>
@@ -572,8 +584,8 @@
             </fileset>
             <pathelement path="${plugin.resources.dir}"/>
             <pathelement path="${plugin.test.dir}/data"/>
-            <pathelement path="${josm.test.build.dir}/unit"/>
-            <pathelement path="${josm}"/>
+            <pathelement path="${josm.test.build.dir}"/>
+            <pathelement path="${josm.jar}"/>
             <pathelement path="${plugin.jar}"/>
             <pathelement path="${annotations.jar}"/>
         </path>
@@ -582,8 +594,8 @@
         <delete dir="${plugin.test.dir}/build"/>
         <delete dir="${plugin.test.dir}/report"/>
         <delete file="${plugin.test.dir}/jacoco.exec" />
-        <delete file="../00_core_test_config/unit-josm.home/preferences.xml" />
-        <delete dir="../00_core_test_config/unit-josm.home/cache" failonerror="false"/>
+        <delete file="${josm.test.dir}/config/unit-josm.home/preferences.xml" />
+        <delete dir="${josm.test.dir}/config/unit-josm.home/cache" failonerror="false"/>
     </target>
     <target name="test-compile" depends="test-init,dist" if="test.present" unless="skip-test">
         <sequential>
@@ -603,7 +615,7 @@
         <sequential>
             <echo message="Running unit tests with JUnit"/>
             <jacoco:agent destfile="${plugin.test.dir}/jacoco.exec" enabled="${coverageByDefault}" inclbootstrapclasses="${jacoco.inclbootstrapclasses}" inclnolocationclasses="${jacoco.inclnolocationclasses}" property="jacocoagent"/>
-            <junitlauncher printsummary="${junit.printsummary}">
+            <junitlauncher haltonfailure="true" printsummary="${junit.printsummary}">
                 <classpath>
                     <fileset refid="plugin.requires.jars"/>
                     <path refid="test.classpath"/>
@@ -626,7 +638,7 @@
                         <jvmarg value="--add-exports" if:set="isJava9" />
                         <jvmarg value="java.desktop/com.sun.imageio.spi=ALL-UNNAMED" if:set="isJava9" />
                         <jvmarg value="-XX:+ShowCodeDetailsInExceptionMessages" if:set="isJava14" unless:set="isJava15" />
-                        <sysproperty key="josm.home" value="../00_core_test_config/unit-josm.home"/>
+                        <sysproperty key="josm.home" value="${josm.test.dir}/config/unit-josm.home"/>
                         <sysproperty key="josm.test.data" value="${plugin.test.dir}/data"/>
                         <sysproperty key="java.awt.headless" value="true"/>
                         <sysproperty key="suppressPermanentFailure" value="${suppressPermanentFailure}"/>
@@ -643,7 +655,7 @@
 
     <target name="checkstyle-compile" depends="resolve-tools">
         <mkdir dir="${checkstyle-build.dir}"/>
-        <javac sourcepath="" srcdir="../00_core_tools/checkstyle/src" failonerror="true"
+        <javac sourcepath="" srcdir="${josm.dir}/tools/checkstyle/src" failonerror="true"
             destdir="${checkstyle-build.dir}" release="${java.lang.version}" debug="on"
             includeantruntime="false" createMissingPackageInfoClass="false"
             encoding="UTF-8" classpathref="checkstyle.classpath">
@@ -695,13 +707,13 @@
     </target>
 
     <target name="runjosm" depends="install">
-        <java jar="${josm}" fork="true"/>
+        <java jar="${josm.jar}" fork="true"/>
     </target>
 
     <target name="profilejosm" depends="install">
         <nbprofiledirect>
         </nbprofiledirect>
-        <java jar="${josm}" fork="true">
+        <java jar="${josm.jar}" fork="true">
             <jvmarg value="${profiler.info.jvmargs.agent}"/>
         </java>
     </target>

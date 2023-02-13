@@ -19,8 +19,6 @@
     <!--<property name="plugin.requires" value="..."/>-->
     <property name="plugin.stage" value="5"/>
 
-    <property name="plugin.dist.dir" location="../../dist"/>
-
 	<!-- ** include targets that all plugins have in common ** -->
     <import file="../build-common.xml"/>
 

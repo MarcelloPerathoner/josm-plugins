@@ -26,6 +26,7 @@ import org.openstreetmap.josm.gui.tagging.presets.TaggingPreset;
 import org.openstreetmap.josm.gui.tagging.presets.TaggingPresetReader;
 import org.openstreetmap.josm.gui.tagging.presets.TaggingPresetSelector;
 import org.openstreetmap.josm.gui.tagging.presets.TaggingPresetType;
+import org.openstreetmap.josm.gui.tagging.presets.TaggingPresets;
 import org.openstreetmap.josm.tools.GBC;
 
 /**
@@ -33,18 +34,21 @@ import org.openstreetmap.josm.tools.GBC;
  */
 public class TaggingPresetTester extends JFrame {
 
-    private TaggingPresetSelector taggingPresets;
+    private TaggingPresetSelector taggingPresetSelector;
     private final String[] args;
     private JPanel taggingPresetPanel = new JPanel(new BorderLayout());
     private JPanel panel = new JPanel(new GridBagLayout());
 
     public final void reload() {
-        taggingPresets.init(TaggingPresetReader.readAll(Arrays.asList(args), true));
+        TaggingPresets taggingPresets = MainApplication.getTaggingPresets();
+        for (String url : args)
+            taggingPresets.addSourceFromUrl(url);
+        taggingPresets.reInit(null, null);
     }
 
     public final void reselect() {
         taggingPresetPanel.removeAll();
-        TaggingPreset preset = taggingPresets.getSelectedPreset();
+        TaggingPreset preset = taggingPresetSelector.getSelectedPreset();
         if (preset == null)
             return;
         Collection<OsmPrimitive> x;
@@ -69,17 +73,17 @@ public class TaggingPresetTester extends JFrame {
     public TaggingPresetTester(String[] args) {
         super(tr("Tagging Preset Tester"));
         this.args = args;
-        taggingPresets = new TaggingPresetSelector(true, true);
-        taggingPresets.setMinimumSize(new Dimension(150,250));
-        taggingPresets.setPreferredSize(new Dimension(300,500));
+        taggingPresetSelector = new TaggingPresetSelector(true, true);
+        taggingPresetSelector.setMinimumSize(new Dimension(150,250));
+        taggingPresetSelector.setPreferredSize(new Dimension(300,500));
         taggingPresetPanel.setMinimumSize(new Dimension(150,250));
         taggingPresetPanel.setPreferredSize(new Dimension(300,500));
         reload();
 
-        panel.add(taggingPresets, GBC.std(0,0).fill(GBC.BOTH).weight(0.5, 1.0));
+        panel.add(taggingPresetSelector, GBC.std(0,0).fill(GBC.BOTH).weight(0.5, 1.0));
         panel.add(taggingPresetPanel, GBC.std(1,0).fill(GBC.BOTH).weight(0.5, 1.0));
-        taggingPresets.addSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && taggingPresets.getSelectedPreset() != null) {
+        taggingPresetSelector.addSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && taggingPresetSelector.getSelectedPreset() != null) {
                 reselect();
             }
         });
@@ -87,9 +91,9 @@ public class TaggingPresetTester extends JFrame {
 
         JButton b = new JButton(tr("Reload"));
         b.addActionListener(e -> {
-            TaggingPreset p = taggingPresets.getSelectedPreset();
+            TaggingPreset p = taggingPresetSelector.getSelectedPreset();
             reload();
-            if (p!=null) taggingPresets.setSelectedPreset(p);
+            if (p!=null) taggingPresetSelector.setSelectedPreset(p);
         });
         panel.add(b, GBC.std(0,1).span(2,1).fill(GBC.HORIZONTAL));
 

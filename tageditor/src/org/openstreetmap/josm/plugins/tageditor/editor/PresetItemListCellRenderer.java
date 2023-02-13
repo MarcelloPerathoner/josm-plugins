@@ -30,7 +30,7 @@ public class PresetItemListCellRenderer extends JLabel implements ListCellRender
                 setBackground(UIManager.getColor("Table.background"));
                 setForeground(UIManager.getColor("Table.foreground"));
             }
-            setIcon(item.getIcon());
+            setIcon(item.getSmallIcon());
             setText(item.getName());
             setOpaque(true);
             setFont(UIManager.getFont("Table.font"));

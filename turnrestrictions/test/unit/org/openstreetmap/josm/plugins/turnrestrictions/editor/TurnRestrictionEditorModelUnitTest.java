@@ -309,7 +309,7 @@ public class TurnRestrictionEditorModelUnitTest {
     public void submodelsExist() {
         assertNotNull(model.getIssuesModel());
         assertNotNull(model.getRelationMemberEditorModel());
-        assertNotNull(model.getTagEditorModel());
+        assertNotNull(model.getTagTableModel());
 
         assertEquals(layer, model.getLayer());
     }

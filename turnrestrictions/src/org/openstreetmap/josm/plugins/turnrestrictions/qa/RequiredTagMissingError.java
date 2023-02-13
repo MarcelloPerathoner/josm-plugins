@@ -7,8 +7,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import org.openstreetmap.josm.gui.tagging.TagEditorModel;
-import org.openstreetmap.josm.gui.tagging.TagModel;
+import org.openstreetmap.josm.gui.tagging.TagTableModel;
 
 /**
  * Issue if a required tag is missing in the current turn restriction.
@@ -48,12 +47,9 @@ public class RequiredTagMissingError extends Issue {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            TagEditorModel model = getIssuesModel().getEditorModel().getTagEditorModel();
-            TagModel t = model.get(tagKey);
-            if (t == null) {
-                t = new TagModel(tagKey, tagValue);
-                model.prepend(t);
-            }
+            TagTableModel model = getIssuesModel().getEditorModel().getTagTableModel();
+            if (model.get(tagKey) == null)
+                model.put(tagKey, tagValue);
         }
     }
 }

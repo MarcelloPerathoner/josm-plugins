@@ -163,8 +163,8 @@ public class PointAction extends MapMode implements AWTEventListener {
         if (!MainApplication.isDisplayingMapView())
             return;
         MapFrame map = MainApplication.getMap();
-        map.statusLine.setHeading(-1);
-        map.statusLine.setAngle(-1);
+        map.statusLine.setHeading(null);
+        map.statusLine.setAngle(null);
         map.mapView.repaint();
         updateStatusLine();
         parentPlugin.abortInput();

@@ -9,12 +9,12 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 
 import org.openstreetmap.josm.data.osm.Changeset;
-import org.openstreetmap.josm.gui.tagging.TagEditorModel;
 import org.openstreetmap.josm.gui.tagging.TagEditorPanel;
+import org.openstreetmap.josm.gui.tagging.TagTableModel;
 import org.openstreetmap.josm.tools.GBC;
 
 public class AdvancedSettingsDialog extends MyDialog {
-    private final TagEditorModel tagsModel = new TagEditorModel();
+    private final TagTableModel tagTableModel = new TagTableModel(null);
 
     private final JCheckBox cBigMode = new JCheckBox(tr("Big buildings mode"));
     private final JCheckBox cSoftCur = new JCheckBox(tr("Rotate crosshair"));
@@ -26,9 +26,9 @@ public class AdvancedSettingsDialog extends MyDialog {
         panel.add(new JLabel(tr("Buildings tags:")), GBC.eol().fill(GBC.HORIZONTAL));
 
         for (Map.Entry<String, String> entry : ToolSettings.getTags().entrySet()) {
-            tagsModel.add(entry.getKey(), entry.getValue());
+            tagTableModel.put(entry.getKey(), entry.getValue());
         }
-        panel.add(new TagEditorPanel(tagsModel, null, Changeset.MAX_CHANGESET_TAG_LENGTH), GBC.eop().fill(GBC.BOTH));
+        panel.add(new TagEditorPanel(tagTableModel, Changeset.MAX_CHANGESET_TAG_LENGTH), GBC.eop().fill(GBC.BOTH));
 
         panel.add(cBigMode, GBC.eol().fill(GBC.HORIZONTAL));
         panel.add(cSoftCur, GBC.eol().fill(GBC.HORIZONTAL));
@@ -43,7 +43,7 @@ public class AdvancedSettingsDialog extends MyDialog {
     }
 
     public final void saveSettings() {
-        ToolSettings.saveTags(tagsModel.getTags());
+        ToolSettings.saveTags(tagTableModel.getTags());
         ToolSettings.setBBMode(cBigMode.isSelected());
         ToolSettings.setSoftCursor(cSoftCur.isSelected());
         ToolSettings.setNoClickAndDrag(cNoClickDrag.isSelected());

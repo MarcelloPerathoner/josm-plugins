@@ -11,11 +11,7 @@
     <property name="plugin.icon" value="images/SC.png"/>
     <property name="plugin.link" value="https://openseamap.org/"/>
 
-    <property name="josm" location="../../core/dist/josm-custom.jar"/>
-    <property name="plugin.dist.dir" value="../../dist"/>
-    
     <!-- ** include targets that all plugins have in common ** -->
-    <import file="../build-common.xml"/>                
+    <import file="../build-common.xml"/>
 
 </project>
-
