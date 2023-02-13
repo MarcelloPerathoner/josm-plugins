@@ -186,6 +186,7 @@
     -->
     <target name="dist" depends="compile,javadoc,revision" unless="skip-dist">
         <echo message="creating ${ant.project.name}.jar ... "/>
+        <mkdir dir="${plugin.dist.dir}"/>
         <antcall target="setup-dist" />
         <delete failonerror="no">
             <fileset dir="." includes="${manifest}*" />

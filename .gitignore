@@ -15,3 +15,5 @@
 **/plugins/routes/xml/
 **/jacoco.exec
 *~
+**/.project
+**/.classpath
