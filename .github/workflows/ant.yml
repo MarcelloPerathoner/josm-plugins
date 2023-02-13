@@ -10,7 +10,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       LANG: en_US.UTF-8
-      JOSM_DIR: core
 
     strategy:
       fail-fast: false
@@ -24,6 +23,7 @@ jobs:
       - name: Checkout Plugins
         uses: actions/checkout@v3
         with:
+          path: 'plugins'
           fetch-depth: 256
 
       - name: Checkout Core
@@ -47,6 +47,7 @@ jobs:
 
       - name: Build Plugins
         run: |
+          cd plugins
           ant dist
 
       - name: Generate release tag
@@ -58,4 +59,4 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          files: dist/*.jar
+          files: core/dist/*.jar
