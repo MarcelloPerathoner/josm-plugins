@@ -38,7 +38,7 @@
         <echo message="compiling sources for ${module.jar} ... "/>
         <javac srcdir="${module.src.dir}" debug="true" destdir="${module.build.dir}" includeAntRuntime="false" encoding="UTF-8">
             <classpath>
-                <pathelement location="${josm}"/>
+                <pathelement location="${josm.jar}"/>
                 <pathelement location="${opendata}"/>
                 <pathelement location="${utilsplugin2}"/>
                 <pathelement location="${apachecommons}"/>

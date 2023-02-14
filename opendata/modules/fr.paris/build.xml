@@ -39,7 +39,7 @@
         <echo message="compiling sources for ${module.jar} ... "/>
         <javac srcdir="${module.src.dir}" debug="true" destdir="${module.build.dir}" includeAntRuntime="false">
             <classpath>
-                <pathelement location="${josm}"/>
+                <pathelement location="${josm.jar}"/>
                 <pathelement location="${opendata}"/>
                 <pathelement location="${jts}"/>
                 <pathelement location="${geotools}"/>

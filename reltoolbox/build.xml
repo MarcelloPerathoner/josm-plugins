@@ -17,7 +17,7 @@
     <import file="../build-common.xml"/>
 
     <target name="runjosm" depends="install">
-        <java jar="${josm}" fork="true">
+        <java jar="${josm.jar}" fork="true">
             <arg line="e:/test.osm"/>
         </java>
     </target>

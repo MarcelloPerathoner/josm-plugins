@@ -51,7 +51,7 @@ msgstr ""
                 linksource="true"
                 private="true">
             <classpath>
-                <pathelement location="${josm}"/>
+                <pathelement location="${josm.jar}"/>
             </classpath>
             <!-- Paths are relative to javadoc destdir (${plugin.javadoc.dir}). -->
             <link href="${josm.dir}/javadoc/"/>
