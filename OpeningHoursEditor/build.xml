@@ -4,7 +4,7 @@
     <property name="commit.message" value="fixed main version"/>
     <!-- enter the *lowest* JOSM version this plugin is currently compatible with -->
     <property name="plugin.main.version" value="14153"/>
-	
+
     <property name="plugin.author" value="Falko Thomale"/>
     <property name="plugin.class" value="org.openstreetmap.josm.plugins.ohe.OhePlugin"/>
     <property name="plugin.description" value="extended options for editing opening_hours"/>
@@ -14,10 +14,10 @@
 
     <!-- ** include targets that all plugins have in common ** -->
     <import file="../build-common.xml"/>
-	
+
 	<property name="parser.dir" location="${plugin.src.dir}/org/openstreetmap/josm/plugins/ohe/parser"/>
-	
-    <target name="javacc" depends="init" unless="javacc.notRequired">
+
+    <target name="javacc" depends="init,init-ivy" unless="javacc.notRequired">
         <ivy:cachepath file="${core.tools.ivy}" pathid="javacc.classpath" conf="javacc"/>
         <java classname="javacc" fork="true" failonerror="true">
             <classpath refid="javacc.classpath"/>
