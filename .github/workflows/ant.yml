@@ -40,15 +40,17 @@ jobs:
           java-version: ${{ matrix.java }}
 
       - name: Build Core
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: jar
-          build-root-directory: core
+        run: |
+          cd core
+          ./gradlew jar
+          cd ..
 
       - name: Build Plugins
         run: |
+          ls core/build/libs/josm.jar
           cd plugins
           ant dist
+          cd ..
 
       - name: Generate release tag
         id: tag
