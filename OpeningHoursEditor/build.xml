@@ -39,7 +39,7 @@
         <javac srcdir="src" debug="true" destdir="${plugin.build.dir}" includeAntRuntime="false" encoding="UTF-8">
             <classpath>
                 <pathelement path="${plugin.build.dir}"/>
-                <pathelement location="${josm}"/>
+                <pathelement location="${josm.jar}"/>
             </classpath>
             <compilerarg value="-Xlint:deprecation"/>
             <compilerarg value="-Xlint:unchecked"/>
