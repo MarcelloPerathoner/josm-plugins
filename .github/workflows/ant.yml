@@ -47,11 +47,6 @@ jobs:
 
       - name: Build Plugins
         run: |
-          ls
-          ls core
-          ls core/build
-          ls core/build/libs
-          ls core/build/libs/josm.jar
           cd plugins
           ant dist
           cd ..
