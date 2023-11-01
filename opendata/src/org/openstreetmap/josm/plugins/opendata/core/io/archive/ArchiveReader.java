@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.xml.stream.FactoryConfigurationError;
@@ -47,7 +48,7 @@ public abstract class ArchiveReader extends AbstractReader {
 
     private File file;
 
-    public ArchiveReader(AbstractDataSetHandler handler, ArchiveHandler archiveHandler, boolean promptUser) {
+    protected ArchiveReader(AbstractDataSetHandler handler, ArchiveHandler archiveHandler, boolean promptUser) {
         this.handler = handler;
         this.archiveHandler = archiveHandler;
         this.promptUser = promptUser;
@@ -122,7 +123,7 @@ public abstract class ArchiveReader extends AbstractReader {
                 ds = from;
             }
         } catch (IllegalArgumentException e) {
-            Logging.error(e.getMessage());
+            Logging.error(e);
         } finally {
             OdUtils.deleteDir(temp);
             if (progressMonitor != null) {
@@ -148,46 +149,48 @@ public abstract class ArchiveReader extends AbstractReader {
         } else {
             Logging.info("Parsing file "+f.getName());
             DataSet from = null;
-            FileInputStream in = new FileInputStream(f);
-            ProgressMonitor instance = null;
-            if (progressMonitor != null) {
-                instance = progressMonitor.createSubTaskMonitor(ProgressMonitor.ALL_TICKS, false);
-            }
-            if (f.getName().toLowerCase().endsWith(OdConstants.CSV_EXT)) {
-                from = CsvReader.parseDataSet(in, handler, instance);
-            } else if (f.getName().toLowerCase().endsWith(OdConstants.KML_EXT)) {
-                from = KmlReader.parseDataSet(in, instance);
-            } else if (f.getName().toLowerCase().endsWith(OdConstants.KMZ_EXT)) {
-                from = KmzReader.parseDataSet(in, instance);
-            } else if (f.getName().toLowerCase().endsWith(OdConstants.XLS_EXT)) {
-                from = XlsReader.parseDataSet(in, handler, instance);
-            } else if (f.getName().toLowerCase().endsWith(OdConstants.ODS_EXT)) {
-                from = OdsReader.parseDataSet(in, handler, instance);
-            } else if (f.getName().toLowerCase().endsWith(OdConstants.SHP_EXT)) {
-                from = ShpReader.parseDataSet(in, f, handler, instance);
-            } else if (f.getName().toLowerCase().endsWith(OdConstants.MIF_EXT)) {
-                from = MifReader.parseDataSet(in, f, handler, instance);
-            } else if (f.getName().toLowerCase().endsWith(OdConstants.TAB_EXT)) {
-                from = TabReader.parseDataSet(in, f, handler, instance);
-            } else if (f.getName().toLowerCase().endsWith(OdConstants.GML_EXT)) {
-                from = GmlReader.parseDataSet(in, handler, instance);
-            } else if (f.getName().toLowerCase().endsWith(OdConstants.XML_EXT)) {
-                if (OdPlugin.getInstance().xmlImporter.acceptFile(f)) {
-                    from = NeptuneReader.parseDataSet(in, handler, instance);
-                } else {
-                    Logging.warn("Unsupported XML file: "+f.getName());
+            try (FileInputStream in = new FileInputStream(f)) {
+                ProgressMonitor instance = null;
+                if (progressMonitor != null) {
+                    instance = progressMonitor.createSubTaskMonitor(ProgressMonitor.ALL_TICKS, false);
                 }
-            } else {
-                Logging.warn("Unsupported file extension: "+f.getName());
+                final String lowerCaseName = f.getName().toLowerCase(Locale.ROOT);
+                if (lowerCaseName.endsWith(OdConstants.CSV_EXT)) {
+                    from = CsvReader.parseDataSet(in, handler, instance);
+                } else if (lowerCaseName.endsWith(OdConstants.KML_EXT)) {
+                    from = KmlReader.parseDataSet(in, instance);
+                } else if (lowerCaseName.endsWith(OdConstants.KMZ_EXT)) {
+                    from = KmzReader.parseDataSet(in, instance);
+                } else if (lowerCaseName.endsWith(OdConstants.XLS_EXT)) {
+                    from = XlsReader.parseDataSet(in, handler, instance);
+                } else if (lowerCaseName.endsWith(OdConstants.ODS_EXT)) {
+                    from = OdsReader.parseDataSet(in, handler, instance);
+                } else if (lowerCaseName.endsWith(OdConstants.SHP_EXT)) {
+                    from = ShpReader.parseDataSet(in, f, handler, instance);
+                } else if (lowerCaseName.endsWith(OdConstants.MIF_EXT)) {
+                    from = MifReader.parseDataSet(in, f, handler);
+                } else if (lowerCaseName.endsWith(OdConstants.TAB_EXT)) {
+                    from = TabReader.parseDataSet(in, f, handler, instance);
+                } else if (lowerCaseName.endsWith(OdConstants.GML_EXT)) {
+                    from = GmlReader.parseDataSet(in, handler, instance);
+                } else if (lowerCaseName.endsWith(OdConstants.XML_EXT)) {
+                    if (OdPlugin.getInstance().xmlImporter.acceptFile(f)) {
+                        from = NeptuneReader.parseDataSet(in, handler, instance);
+                    } else {
+                        Logging.warn("Unsupported XML file: " + f.getName());
+                    }
+                } else {
+                    Logging.warn("Unsupported file extension: " + f.getName());
+                }
+                return from;
             }
-            return from;
         }
     }
 
     protected final void lookForCandidate(String entryName, final List<File> candidates, File file) {
         // Test file name to see if it may contain useful data
         for (String ext : NetworkReader.FILE_READERS.keySet()) {
-            if (entryName.toLowerCase().endsWith("."+ext)) {
+            if (entryName.toLowerCase(Locale.ROOT).endsWith("."+ext)) {
                 candidates.add(file);
                 break;
             }

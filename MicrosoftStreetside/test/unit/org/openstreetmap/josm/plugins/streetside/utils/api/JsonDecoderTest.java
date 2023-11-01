@@ -1,29 +1,30 @@
 // License: GPL. For details, see LICENSE file.
 package org.openstreetmap.josm.plugins.streetside.utils.api;
 
-import static org.junit.Assert.assertNull;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 
-import javax.json.Json;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import org.openstreetmap.josm.plugins.streetside.utils.TestUtil;
 
-public class JsonDecoderTest {
+class JsonDecoderTest {
 
   @Test
-  public void testUtilityClass() {
+  void testUtilityClass() {
     TestUtil.testUtilityClass(JsonDecoder.class);
   }
 
   @Test
-  public void testDecodeDoublePair() {
-    assertNull(JsonDecoder.decodeDoublePair(null));
+  void testDecodeDoublePair() {
+    assertArrayEquals(new double[0], JsonDecoder.decodeDoublePair(null));
   }
 
   static void assertDecodesToNull(Function<JsonObject, ?> function, String...parts) {

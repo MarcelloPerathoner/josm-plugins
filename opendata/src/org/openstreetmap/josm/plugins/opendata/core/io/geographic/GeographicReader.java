@@ -17,11 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.spi.JsonProvider;
-import javax.swing.Icon;
 import javax.swing.JOptionPane;
 
 import org.geotools.geometry.jts.JTS;
@@ -35,17 +30,16 @@ import org.geotools.referencing.crs.AbstractSingleCRS;
 import org.geotools.util.factory.Hints;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
-import org.opengis.geometry.MismatchedDimensionException;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.IdentifiedObject;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.crs.ProjectedCRS;
-import org.opengis.referencing.cs.CoordinateSystem;
-import org.opengis.referencing.datum.Datum;
-import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.OperationNotFoundException;
-import org.opengis.referencing.operation.TransformException;
+import org.geotools.api.geometry.MismatchedDimensionException;
+import org.geotools.api.referencing.FactoryException;
+import org.geotools.api.referencing.IdentifiedObject;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.crs.ProjectedCRS;
+import org.geotools.api.referencing.cs.CoordinateSystem;
+import org.geotools.api.referencing.datum.Datum;
+import org.geotools.api.referencing.operation.MathTransform;
+import org.geotools.api.referencing.operation.OperationNotFoundException;
+import org.geotools.api.referencing.operation.TransformException;
 import org.openstreetmap.josm.data.coor.ILatLon;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.osm.DataSet;
@@ -70,6 +64,11 @@ import org.openstreetmap.josm.tools.ReflectionUtils;
 import org.openstreetmap.josm.tools.UserCancelException;
 import org.openstreetmap.josm.tools.Utils;
 
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.spi.JsonProvider;
+
 /**
  * Superclass of geographic format readers (currently GML, GPKG, and SHP).
  */
@@ -79,10 +78,8 @@ public abstract class GeographicReader extends AbstractReader {
     static {
         try {
             wgs84 = CRS.decode("EPSG:4326");
-        } catch (NoSuchAuthorityCodeException e) {
-            e.printStackTrace();
         } catch (FactoryException e) {
-            e.printStackTrace();
+            Logging.error(e);
         }
     }
 
@@ -96,7 +93,7 @@ public abstract class GeographicReader extends AbstractReader {
 
     private static final Map<String, Integer> esriWkid = new TreeMap<>();
 
-    public GeographicReader(GeographicHandler handler, GeographicHandler[] defaultHandlers) {
+    protected GeographicReader(GeographicHandler handler, GeographicHandler[] defaultHandlers) {
         this.nodes = new HashMap<>();
         this.handler = handler;
         this.defaultHandlers = defaultHandlers;
@@ -184,16 +181,16 @@ public abstract class GeographicReader extends AbstractReader {
         Way w = null;
         Way tempWay = new Way();
         if (ls != null) {
-            final List<Node> nodes = new ArrayList<>(ls.getNumPoints());
+            final List<Node> lsNodes = new ArrayList<>(ls.getNumPoints());
             // Build list of nodes
             for (int i = 0; i < ls.getNumPoints(); i++) {
                 try {
-                    nodes.add(createOrGetNode(ls.getPointN(i)));
+                    lsNodes.add(createOrGetNode(ls.getPointN(i)));
                 } catch (TransformException | IllegalArgumentException e) {
                     Logging.error("Exception for " + ls + ": " + e.getClass().getName() + ": " + e.getMessage());
                 }
             }
-            tempWay.setNodes(nodes);
+            tempWay.setNodes(lsNodes);
             // Find possible duplicated ways
             if (tempWay.getNodesCount() > 0) {
                 Collection<Way> candidates = Utils.filteredCollection(tempWay.firstNode().getReferrers(), Way.class);
@@ -224,7 +221,7 @@ public abstract class GeographicReader extends AbstractReader {
         return addOsmPrimitive(r);
     }
 
-    protected final void addWayToMp(Relation r, String role, Way w) {
+    protected static void addWayToMp(Relation r, String role, Way w) {
         r.addMember(new RelationMember(role, w));
     }
 
@@ -232,27 +229,26 @@ public abstract class GeographicReader extends AbstractReader {
      * returns true if the user wants to cancel, false if they
      * want to continue
      */
-    protected static final boolean warnLenientMethod(final Component parent, final CoordinateReferenceSystem crs) {
+    protected static boolean warnLenientMethod(final Component parent, final CoordinateReferenceSystem crs) {
         return new DialogPrompter<ExtendedDialog>() {
             @Override
             protected ExtendedDialog buildDialog() {
                 final ExtendedDialog dlg = new ExtendedDialog(parent,
                         tr("Cannot transform to WGS84"),
-                        new String[] {tr("Cancel"), tr("Continue")});
+                        tr("Cancel"), tr("Continue"));
                 // CHECKSTYLE.OFF: LineLength
                 dlg.setContent("<html>" +
-                        tr("JOSM was unable to find a strict mathematical transformation between ''{0}'' and WGS84.<br /><br />"+
-                        "Do you want to try a <i>lenient</i> method, which will perform a non-precise transformation (<b>with location errors up to 1 km</b>) ?<br/><br/>"+
+                        tr("JOSM was unable to find a strict mathematical transformation between ''{0}'' and WGS84.<br /><br />" +
+                        "Do you want to try a <i>lenient</i> method, which will perform a non-precise transformation " +
+                        "(<b>with location errors up to 1 km</b>) ?<br/><br/>"+
                         "If so, <b>do NOT upload</b> such data to OSM !", crs.getName())+
                         "</html>");
                 // CHECKSTYLE.ON: LineLength
-                dlg.setButtonIcons(new Icon[] {
-                        new ImageProvider("cancel").setMaxSize(ImageSizes.LARGEICON).get(),
+                dlg.setButtonIcons(new ImageProvider("cancel").setMaxSize(ImageSizes.LARGEICON).get(),
                         new ImageProvider("ok").setMaxSize(ImageSizes.LARGEICON).addOverlay(
-                                new ImageOverlay(new ImageProvider("warning-small"), 0.5, 0.5, 1.0, 1.0)).get()});
-                dlg.setToolTipTexts(new String[] {
-                        tr("Cancel"),
-                        tr("Try lenient method")});
+                                new ImageOverlay(new ImageProvider("warning-small"), 0.5, 0.5, 1.0, 1.0)).get());
+                dlg.setToolTipTexts(tr("Cancel"),
+                        tr("Try lenient method"));
                 dlg.setIcon(JOptionPane.WARNING_MESSAGE);
                 dlg.setCancelButton(1);
                 return dlg;
@@ -351,7 +347,7 @@ public abstract class GeographicReader extends AbstractReader {
      * Find the math transform for the CRS used by this reader
      * @param parent The parent component, used for showing dialogs
      * @param findSimiliarCrs {@code true} if we don't need to find the exact CRS
-     * @throws FactoryException See {@link CRS#findMathTransform}, {@link org.opengis.referencing.AuthorityFactory#getAuthorityCodes}
+     * @throws FactoryException See {@link CRS#findMathTransform}, {@link org.geotools.api.referencing.AuthorityFactory#getAuthorityCodes}
      * @throws UserCancelException If the user cancelled in one of the message dialogs
      * @throws GeoMathTransformException If no transform could be found
      */

@@ -40,7 +40,6 @@
     <property name="plugin.doc.dir"         location="javadoc"/>
     <property name="plugin.lib.dir"         location="lib"/>
     <property name="javadoc.executable"     value="javadoc" />
-    <property name="javadoc.link"           value="https://docs.oracle.com/javase/${java.lang.version}/docs/api" />
     <property name="manifest"               value="MANIFEST"/>
     <property name="manifest.unixoid"       value="MANIFEST-unixoid"/>
     <property name="manifest.windows"       value="MANIFEST-windows"/>

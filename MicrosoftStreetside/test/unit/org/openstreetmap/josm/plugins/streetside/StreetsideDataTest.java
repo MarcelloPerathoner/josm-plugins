@@ -1,15 +1,20 @@
 // License: GPL. For details, see LICENSE file.
 package org.openstreetmap.josm.plugins.streetside;
 
-import static org.junit.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.openstreetmap.josm.data.coor.LatLon;
+import org.openstreetmap.josm.testutils.annotations.Main;
 
 /**
  * Tests for {@link StreetsideData} class.
@@ -17,7 +22,8 @@ import org.openstreetmap.josm.data.coor.LatLon;
  * @author nokutu
  * @see StreetsideData
  */
-public class StreetsideDataTest {
+@Main
+class StreetsideDataTest {
 
   /*@Rule
   public JOSMTestRules rules = new StreetsideTestRules().platform();*/
@@ -32,7 +38,7 @@ public class StreetsideDataTest {
    * Creates a sample {@link StreetsideData} objects, 4 {@link StreetsideImage}
    * objects and a {@link StreetsideSequence} object.
    */
-  @Before
+  @BeforeEach
   public void setUp() {
     img1 = new StreetsideImage("id1__________________", new LatLon(0.1, 0.1), 90);
     img2 = new StreetsideImage("id2__________________", new LatLon(0.2, 0.2), 90);
@@ -50,9 +56,8 @@ public class StreetsideDataTest {
    * Tests the addition of new images. If a second image with the same key as
    * another one in the database, the one that is being added should be ignored.
    */
-  @Ignore
   @Test
-  public void addTest() {
+  void testAdd() {
     data = new StreetsideData();
     assertEquals(0, data.getImages().size());
     data.add(img1);
@@ -68,9 +73,8 @@ public class StreetsideDataTest {
   /**
    * Test that the size is properly calculated.
    */
-  @Ignore
   @Test
-  public void sizeTest() {
+  void testSize() {
     assertEquals(4, data.getImages().size());
     data.add(new StreetsideImage("id5__________________", new LatLon(0.1, 0.1), 90));
     assertEquals(5, data.getImages().size());
@@ -80,22 +84,21 @@ public class StreetsideDataTest {
    * Test the {@link StreetsideData#setHighlightedImage(StreetsideAbstractImage)}
    * and {@link StreetsideData#getHighlightedImage()} methods.
    */
-  @Ignore
   @Test
-  public void highlighTest() {
+  void testHighlight() {
     data.setHighlightedImage(img1);
     assertEquals(img1, data.getHighlightedImage());
 
     data.setHighlightedImage(null);
-    assertEquals(null, data.getHighlightedImage());
+    assertNull(data.getHighlightedImage());
   }
 
   /**
    * Tests the selection of images.
    */
-  @Ignore
+  @Disabled("The imgs have non-int identifiers while the code expects the identifiers to be int in string form")
   @Test
-  public void selectTest() {
+  void testSelect() {
     data.setSelectedImage(img1);
     assertEquals(img1, data.getSelectedImage());
 
@@ -103,16 +106,16 @@ public class StreetsideDataTest {
     assertEquals(img4, data.getSelectedImage());
 
     data.setSelectedImage(null);
-    assertEquals(null, data.getSelectedImage());
+    assertNull(data.getSelectedImage());
   }
 
   /**
    * Tests the {@link StreetsideData#selectNext()} and
    * {@link StreetsideData#selectPrevious()} methods.
    */
-  @Ignore
   @Test
-  public void nextAndPreviousTest() {
+  @Disabled("The imgs have non-int identifiers while the code expects the identifiers to be int in string form")
+  void testNextAndPrevious() {
     data.setSelectedImage(img1);
 
     data.selectNext();
@@ -125,27 +128,27 @@ public class StreetsideDataTest {
     data.setSelectedImage(null);
   }
 
-  @Ignore
-  @Test(expected=IllegalStateException.class)
-  public void nextOfNullImgTest() {
+  @Disabled("Someone decided to not throw an IllegalStateException. No clue why.")
+  @Test
+  void testNextOfNullImg() {
     data.setSelectedImage(null);
-    data.selectNext();
+    assertThrows(IllegalStateException.class, data::selectNext);
   }
 
-  @Ignore
-  @Test(expected=IllegalStateException.class)
-  public void previousOfNullImgTest() {
+  @Disabled("Someone decided to not throw an IllegalStateException. No clue why.")
+  @Test
+  void testPreviousOfNullImg() {
     data.setSelectedImage(null);
-    data.selectPrevious();
+    assertThrows(IllegalStateException.class, data::selectPrevious);
   }
 
   /**
    * Test the multiselection of images. When a new image is selected, the
    * multiselected List should reset.
    */
-  @Ignore
+  @Disabled("The imgs have non-int identifiers while the code expects the identifiers to be int in string form")
   @Test
-  public void multiSelectTest() {
+  void testMultiSelect() {
     assertEquals(0, data.getMultiSelectedImages().size());
     data.setSelectedImage(img1);
     assertEquals(1, data.getMultiSelectedImages().size());

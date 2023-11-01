@@ -5,15 +5,17 @@ import static org.openstreetmap.josm.tools.I18n.tr;
 
 import org.openstreetmap.josm.command.ChangeCommand;
 import org.openstreetmap.josm.command.Command;
+import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.RelationMember;
 import org.openstreetmap.josm.gui.MainApplication;
-
+import org.openstreetmap.josm.tools.Utils;
 
 /**
- * @see https://wiki.openstreetmap.org/wiki/Relation:boundary
+ * Fix multipolygon boundaries
+ * @see <a href="https://wiki.openstreetmap.org/wiki/Relation:boundary">osmwiki:Relation:boundary</a>
  */
 public class BoundaryFixer extends MultipolygonFixer {
 
@@ -24,7 +26,7 @@ public class BoundaryFixer extends MultipolygonFixer {
     /**
      * For boundary relations both "boundary" and "multipolygon" types are applicable, but
      * it should also have key boundary=administrative to be fully boundary.
-     * @see https://wiki.openstreetmap.org/wiki/Relation:boundary
+     * @see <a href="https://wiki.openstreetmap.org/wiki/Relation:boundary">osmwiki:Relation:boundary</a>
      */
     @Override
     public boolean isFixerApplicable(Relation rel) {
@@ -65,7 +67,11 @@ public class BoundaryFixer extends MultipolygonFixer {
             fixed = true;
             r = rr;
         }
-        return fixed ? new ChangeCommand(MainApplication.getLayerManager().getEditDataSet(), rel, r) : null;
+        if (fixed) {
+            final DataSet ds = Utils.firstNonNull(rel.getDataSet(), MainApplication.getLayerManager().getEditDataSet());
+            return new ChangeCommand(ds, rel, r);
+        }
+        return null;
     }
 
     private Relation fixBoundaryRoles(Relation source) {

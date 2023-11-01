@@ -53,10 +53,11 @@ public class KmlReader extends AbstractReader {
     public static final String KML_EXT_LANG = "lang";
     // CHECKSTYLE.ON: SingleSpaceSeparator
 
-    public static Pattern COLOR_PATTERN = Pattern.compile("\\p{XDigit}{8}");
+    public static final Pattern COLOR_PATTERN = Pattern.compile("\\p{XDigit}{8}");
+    private static final Pattern SPACE_PATTERN = Pattern.compile("\\s", Pattern.UNICODE_CHARACTER_CLASS);
 
-    private XMLStreamReader parser;
-    private Map<LatLon, Node> nodes = new HashMap<>();
+    private final XMLStreamReader parser;
+    private final Map<LatLon, Node> nodes = new HashMap<>();
 
     public KmlReader(XMLStreamReader parser) {
         this.parser = parser;
@@ -64,9 +65,10 @@ public class KmlReader extends AbstractReader {
 
     public static DataSet parseDataSet(InputStream in, ProgressMonitor instance)
             throws IOException, XMLStreamException, FactoryConfigurationError {
-        InputStreamReader ir = UTFInputStreamReader.create(in);
-        XMLStreamReader parser = XMLInputFactory.newInstance().createXMLStreamReader(ir);
-        return new KmlReader(parser).parseDoc();
+        try (InputStreamReader ir = UTFInputStreamReader.create(in)) {
+            XMLStreamReader parser = XMLInputFactory.newInstance().createXMLStreamReader(ir);
+            return new KmlReader(parser).parseDoc();
+        }
     }
 
     @Override
@@ -79,10 +81,8 @@ public class KmlReader extends AbstractReader {
         DataSet ds = new DataSet();
         while (parser.hasNext()) {
             int event = parser.next();
-            if (event == XMLStreamConstants.START_ELEMENT) {
-                if (parser.getLocalName().equals(KML_PLACEMARK)) {
-                    parsePlaceMark(ds);
-                }
+            if (event == XMLStreamConstants.START_ELEMENT && parser.getLocalName().equals(KML_PLACEMARK)) {
+                parsePlaceMark(ds);
             }
         }
         return ds;
@@ -128,7 +128,8 @@ public class KmlReader extends AbstractReader {
                         tags.put(key, parser.getElementText());
                     }
                 } else if (parser.getLocalName().equals(KML_POLYGON)) {
-                    ds.addPrimitive(relation = new Relation());
+                    relation = new Relation();
+                    ds.addPrimitive(relation);
                     relation.put("type", "multipolygon");
                     list.add(relation);
                 } else if (parser.getLocalName().equals(KML_OUTER_BOUND)) {
@@ -137,30 +138,30 @@ public class KmlReader extends AbstractReader {
                     role = "inner";
                 } else if (parser.getLocalName().equals(KML_LINEAR_RING)) {
                     if (relation != null) {
-                        ds.addPrimitive(way = new Way());
+                        way = new Way();
+                        ds.addPrimitive(way);
                         wayNodes = new ArrayList<>();
                         relation.addMember(new RelationMember(role, way));
                     }
                 } else if (parser.getLocalName().equals(KML_LINE_STRING) || parser.getLocalName().equals(KML_EXT_TRACK)) {
-                    ds.addPrimitive(way = new Way());
+                    way = new Way();
+                    ds.addPrimitive(way);
                     wayNodes = new ArrayList<>();
                     list.add(way);
                 } else if (parser.getLocalName().equals(KML_COORDINATES)) {
-                    String[] tab = parser.getElementText().trim().split("\\s");
-                    for (int i = 0; i < tab.length; i++) {
-                        node = parseNode(ds, wayNodes, node, tab[i].split(","));
+                    String[] tab = SPACE_PATTERN.split(parser.getElementText().trim());
+                    for (String s : tab) {
+                        node = parseNode(ds, wayNodes, node, s.split(","));
                     }
                 } else if (parser.getLocalName().equals(KML_EXT_COORD)) {
-                    node = parseNode(ds, wayNodes, node, parser.getElementText().trim().split("\\s"));
+                    node = parseNode(ds, wayNodes, node, SPACE_PATTERN.split(parser.getElementText().trim()));
                     if (node != null && when > 0) {
                         node.setRawTimestamp((int) when);
                     }
                 } else if (parser.getLocalName().equals(KML_WHEN)) {
                     when = DateUtils.tsFromString(parser.getElementText().trim());
-                } else if (parser.getLocalName().equals(KML_EXT_LANG)) {
-                    if (KML_NAME.equals(previousName)) {
-                        tags.put(KML_NAME, parser.getElementText());
-                    }
+                } else if (parser.getLocalName().equals(KML_EXT_LANG) && KML_NAME.equals(previousName)) {
+                    tags.put(KML_NAME, parser.getElementText());
                 }
                 previousName = parser.getLocalName();
             } else if (event == XMLStreamConstants.END_ELEMENT) {
@@ -177,24 +178,24 @@ public class KmlReader extends AbstractReader {
                 }
             }
         }
-        for (OsmPrimitive p : list) {
-            for (String key : tags.keySet()) {
-                p.put(key, tags.get(key));
+        ds.update(() -> {
+            for (OsmPrimitive p : list) {
+                p.putAll(tags);
             }
-        }
+        });
     }
 
     private Node parseNode(DataSet ds, List<Node> wayNodes, Node node, String[] values) {
         if (values.length >= 2) {
-            LatLon ll = new LatLon(Double.valueOf(values[1]), Double.valueOf(values[0])).getRoundedToOsmPrecision();
-            node = nodes.get(ll);
-            if (node == null) {
-                ds.addPrimitive(node = new Node(ll));
-                nodes.put(ll, node);
-                if (values.length > 2 && !values[2].equals("0")) {
-                    node.put("ele", values[2]);
+            LatLon ll = new LatLon(Double.parseDouble(values[1]), Double.parseDouble(values[0])).getRoundedToOsmPrecision();
+            node = nodes.computeIfAbsent(ll, latLon -> {
+                Node tNode = new Node(latLon);
+                ds.addPrimitive(tNode);
+                if (values.length > 2 && !"0".equals(values[2])) {
+                    tNode.put("ele", values[2]);
                 }
-            }
+                return tNode;
+            });
             if (wayNodes != null) {
                 wayNodes.add(node);
             }

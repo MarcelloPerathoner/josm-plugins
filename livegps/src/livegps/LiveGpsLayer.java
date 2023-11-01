@@ -21,16 +21,12 @@ import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.GpxLayer;
 import org.openstreetmap.josm.spi.preferences.Config;
 
+/**
+ * The LiveGPS layer
+ */
 public class LiveGpsLayer extends GpxLayer implements PropertyChangeListener {
     public static final String LAYER_NAME = tr("LiveGPS layer");
 
-    private static final int DEFAULT_REFRESH_INTERVAL = 250;
-    private static final int DEFAULT_CENTER_INTERVAL = 5000;
-    private static final int DEFAULT_CENTER_FACTOR = 80;
-    private static final String oldC_REFRESH_INTERVAL = "livegps.refreshinterval";     /* in seconds */
-    private static final String C_REFRESH_INTERVAL = "livegps.refresh_interval_msec";  /* in msec */
-    private static final String C_CENTER_INTERVAL = "livegps.center_interval_msec";  /* in msec */
-    private static final String C_CENTER_FACTOR = "livegps.center_factor" /* in percent */;
     private int refreshInterval;
     private int centerInterval;
     private double centerFactor;
@@ -41,6 +37,7 @@ public class LiveGpsLayer extends GpxLayer implements PropertyChangeListener {
     LatLon lastPos;
     WayPoint lastPoint;
     private final AppendableGpxTrackSegment trackSegment;
+    private final GpxData gpxData;
     boolean autocenter;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
@@ -53,6 +50,7 @@ public class LiveGpsLayer extends GpxLayer implements PropertyChangeListener {
 
         IGpxTrack trackBeingWritten = new SingleSegmentGpxTrack(trackSegment, attr);
         data.tracks.add(trackBeingWritten);
+        gpxData = data;
 
         initIntervals();
     }
@@ -62,17 +60,23 @@ public class LiveGpsLayer extends GpxLayer implements PropertyChangeListener {
         return new LiveGpsDrawHelper(this);
     }
 
-    void setCurrentPosition(double lat, double lon) {
+    void setCurrentPosition(double lat, double lon, WayPoint wp) {
         LatLon thisPos = new LatLon(lat, lon);
-        if (lastPos != null && thisPos.equalsEpsilon(lastPos, ILatLon.MAX_SERVER_PRECISION))
+        if (lastPos != null && thisPos.equalsEpsilon(lastPos, ILatLon.MAX_SERVER_PRECISION) &&
+        Config.getPref().getBoolean(LiveGPSPreferences.C_ALLPOSITIONS, false))
             // no change in position
             // maybe show a "paused" cursor or some such
             return;
 
         lastPos = thisPos;
-        lastPoint = new WayPoint(thisPos);
-        lastPoint.attr.put("time", dateFormat.format(new Date()));
+        if (wp != null) {
+          lastPoint = wp;
+        } else {
+          lastPoint = new WayPoint(thisPos);
+          lastPoint.attr.put("time", dateFormat.format(new Date()));
+        }
         trackSegment.addWaypoint(lastPoint);
+        gpxData.invalidate();
 
         if (autocenter)
             conditionalCenter(thisPos);
@@ -109,7 +113,7 @@ public class LiveGpsLayer extends GpxLayer implements PropertyChangeListener {
         if ("gpsdata".equals(evt.getPropertyName())) {
             lastData = (LiveGpsData) evt.getNewValue();
             if (lastData.isFix()) {
-                setCurrentPosition(lastData.getLatitude(), lastData.getLongitude());
+                setCurrentPosition(lastData.getLatitude(), lastData.getLongitude(), lastData.getWaypoint());
                 if (allowRedraw())
                     this.setFilterStateChanged();
             }
@@ -139,20 +143,15 @@ public class LiveGpsLayer extends GpxLayer implements PropertyChangeListener {
      * exists, it will be initialized here.
      */
     private void initIntervals() {
-        if ((refreshInterval = Config.getPref().getInt(oldC_REFRESH_INTERVAL, 0)) != 0) {
-            refreshInterval *= 1000;
-            Config.getPref().put(oldC_REFRESH_INTERVAL, null);
-        } else
-            refreshInterval = Config.getPref().getInt(C_REFRESH_INTERVAL, DEFAULT_REFRESH_INTERVAL);
-
-        centerInterval = Config.getPref().getInt(C_CENTER_INTERVAL, DEFAULT_CENTER_INTERVAL);
-        centerFactor = Config.getPref().getInt(C_CENTER_FACTOR, DEFAULT_CENTER_FACTOR);
+        refreshInterval = Config.getPref().getInt(LiveGPSPreferences.C_REFRESH_INTERVAL, LiveGPSPreferences.DEFAULT_REFRESH_INTERVAL);
+        centerInterval = Config.getPref().getInt(LiveGPSPreferences.C_CENTER_INTERVAL, LiveGPSPreferences.DEFAULT_CENTER_INTERVAL);
+        centerFactor = Config.getPref().getInt(LiveGPSPreferences.C_CENTER_FACTOR, LiveGPSPreferences.DEFAULT_CENTER_FACTOR);
         if (centerFactor <= 1 || centerFactor >= 99)
-            centerFactor = DEFAULT_CENTER_FACTOR;
+            centerFactor = LiveGPSPreferences.DEFAULT_CENTER_FACTOR;
 
-            Config.getPref().putInt(C_REFRESH_INTERVAL, refreshInterval);
-            Config.getPref().putInt(C_CENTER_INTERVAL, centerInterval);
-        Config.getPref().putInt(C_CENTER_FACTOR, (int) centerFactor);
+            Config.getPref().putInt(LiveGPSPreferences.C_REFRESH_INTERVAL, refreshInterval);
+            Config.getPref().putInt(LiveGPSPreferences.C_CENTER_INTERVAL, centerInterval);
+        Config.getPref().putInt(LiveGPSPreferences.C_CENTER_FACTOR, (int) centerFactor);
 
         /*
          * Do one time conversion of factor: user value means "how big is inner rectangle

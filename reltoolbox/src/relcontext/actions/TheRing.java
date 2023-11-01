@@ -5,6 +5,7 @@ import static org.openstreetmap.josm.tools.I18n.tr;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +37,9 @@ import org.openstreetmap.josm.tools.Logging;
 public class TheRing {
     private static final String PREF_MULTIPOLY = "reltoolbox.multipolygon.";
 
-    private Way source;
-    private List<RingSegment> segments;
-    private Relation relation = null;
+    private final Way source;
+    private final List<RingSegment> segments;
+    private Relation relation;
 
     public TheRing(Way source) {
         this.source = source;
@@ -211,7 +212,7 @@ public class TheRing {
             return result;
     }
 
-    private boolean areSegmentsEqual(RingSegment seg1, RingSegment seg2) {
+    private static boolean areSegmentsEqual(RingSegment seg1, RingSegment seg2) {
         List<Node> nodes1 = seg1.getNodes();
         List<Node> nodes2 = seg2.getNodes();
         int size = nodes1.size();
@@ -261,7 +262,7 @@ public class TheRing {
     /**
      * Tries to arrange segments in order for each ring to have at least one.
      * Also, sets source way for all rings.
-     *
+     * <p>
      * If this method is not called, do not forget to call {@link #putSourceWayFirst()} for all rings.
      */
     public static void redistributeSegments(List<TheRing> rings) {
@@ -276,8 +277,7 @@ public class TheRing {
         }
 
         // rearrange references
-        for (int i = 0; i < rings.size(); i++) {
-            TheRing ring = rings.get(i);
+        for (TheRing ring : rings) {
             if (ring.countNonReferenceSegments() == 0) {
                 // need to find one non-reference segment
                 for (RingSegment seg : ring.segments) {
@@ -330,14 +330,15 @@ public class TheRing {
     public List<Command> getCommands(boolean createMultipolygon, Map<Relation, Relation> relationChangeMap) {
         Way sourceCopy = new Way(source);
         if (createMultipolygon) {
-            Collection<String> linearTags = Config.getPref().getList(PREF_MULTIPOLY + "lineartags", CreateMultipolygonAction.DEFAULT_LINEAR_TAGS);
+            Collection<String> linearTags = Config.getPref().getList(PREF_MULTIPOLY + "lineartags",
+                    CreateMultipolygonAction.DEFAULT_LINEAR_TAGS);
             relation = new Relation();
             relation.put("type", "multipolygon");
             for (String key : sourceCopy.keySet()) {
                 if (linearTags.contains(key)) {
                     continue;
                 }
-                if (key.equals("natural") && sourceCopy.get("natural").equals("coastline")) {
+                if ("natural".equals(key) && "coastline".equals(sourceCopy.get("natural"))) {
                     continue;
                 }
                 relation.put(key, sourceCopy.get(key));
@@ -350,7 +351,7 @@ public class TheRing {
         List<Command> relationCommands = new ArrayList<>();
         for (OsmPrimitive p : source.getReferrers()) {
             if (p instanceof Relation) {
-                Relation rel = null;
+                Relation rel;
                 if (relationChangeMap != null) {
                     if (relationChangeMap.containsKey(p)) {
                         rel = relationChangeMap.get(p);
@@ -364,7 +365,7 @@ public class TheRing {
                 }
                 for (int i = 0; i < rel.getMembersCount(); i++) {
                     if (rel.getMember(i).getMember().equals(source)) {
-                        referencingRelations.put(rel, Integer.valueOf(i));
+                        referencingRelations.put(rel, i);
                     }
                 }
             }
@@ -386,8 +387,9 @@ public class TheRing {
                 }
                 foundOwnWay = true;
             } else {
-                for (Relation rel : referencingRelations.keySet()) {
-                    int relIndex = referencingRelations.get(rel);
+                for (Map.Entry<Relation, Integer> entry : referencingRelations.entrySet()) {
+                    Relation rel = entry.getKey();
+                    int relIndex = entry.getValue();
                     rel.addMember(new RelationMember(rel.getMember(relIndex).getRole(), w));
                 }
             }
@@ -396,7 +398,10 @@ public class TheRing {
             }
         }
         if (!foundOwnWay) {
-            commands.add(new DeleteCommand(source));
+            final Command deleteCommand = DeleteCommand.delete(Collections.singleton(source));
+            if (deleteCommand != null) {
+                commands.add(deleteCommand);
+            }
         }
         commands.addAll(relationCommands);
         if (createMultipolygon) {
@@ -406,8 +411,8 @@ public class TheRing {
     }
 
     public static void updateCommandsWithRelations(List<Command> commands, Map<Relation, Relation> relationCache) {
-        for (Relation src : relationCache.keySet()) {
-            commands.add(new ChangeCommand(src, relationCache.get(src)));
+        for (Map.Entry<Relation, Relation> entry : relationCache.entrySet()) {
+            commands.add(new ChangeCommand(entry.getKey(), entry.getValue()));
         }
     }
 
@@ -440,8 +445,8 @@ public class TheRing {
     private static class RingSegment {
         private List<Node> nodes;
         private RingSegment references;
-        private Way resultingWay = null;
-        private boolean wasTemplateApplied = false;
+        private Way resultingWay;
+        private boolean wasTemplateApplied;
         private boolean isRing;
 
         RingSegment(Way w) {

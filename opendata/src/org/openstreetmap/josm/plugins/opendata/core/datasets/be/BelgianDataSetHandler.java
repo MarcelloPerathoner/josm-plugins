@@ -11,8 +11,10 @@ import org.openstreetmap.josm.data.osm.Tag;
 import org.openstreetmap.josm.data.projection.Projection;
 import org.openstreetmap.josm.plugins.opendata.core.OdConstants;
 import org.openstreetmap.josm.plugins.opendata.core.datasets.SimpleDataSetHandler;
+import org.openstreetmap.josm.plugins.opendata.core.io.tabular.CsvHandler;
 import org.openstreetmap.josm.plugins.opendata.core.io.tabular.DefaultCsvHandler;
 import org.openstreetmap.josm.spi.preferences.Config;
+import org.openstreetmap.josm.tools.Logging;
 
 public abstract class BelgianDataSetHandler extends SimpleDataSetHandler implements BelgianConstants {
 
@@ -32,15 +34,6 @@ public abstract class BelgianDataSetHandler extends SimpleDataSetHandler impleme
     };
 
     protected class InternalCsvHandler extends DefaultCsvHandler {
-        /*@Override
-        public List<Projection> getSpreadSheetProjections() {
-            if (singleProjection != null) {
-                return Arrays.asList(new Projection[]{singleProjection});
-            } else {
-                return Arrays.asList(projections);
-            }
-        }*/
-
         @Override
         public LatLon getCoor(EastNorth en, String[] fields) {
             if (singleProjection != null) {
@@ -51,21 +44,21 @@ public abstract class BelgianDataSetHandler extends SimpleDataSetHandler impleme
         }
     }
 
-    public BelgianDataSetHandler() {
+    protected BelgianDataSetHandler() {
         init();
     }
 
-    public BelgianDataSetHandler(String relevantTag) {
+    protected BelgianDataSetHandler(String relevantTag) {
         super(relevantTag);
         init();
     }
 
-    public BelgianDataSetHandler(boolean relevantUnion, String[] relevantTags) {
+    protected BelgianDataSetHandler(boolean relevantUnion, String[] relevantTags) {
         super(relevantUnion, relevantTags);
         init();
     }
 
-    public BelgianDataSetHandler(boolean relevantUnion, Tag[] relevantTags) {
+    protected BelgianDataSetHandler(boolean relevantUnion, Tag[] relevantTags) {
         super(relevantUnion, relevantTags);
         init();
     }
@@ -84,13 +77,16 @@ public abstract class BelgianDataSetHandler extends SimpleDataSetHandler impleme
 
     protected final void setSingleProjection(Projection singleProjection) {
         this.singleProjection = singleProjection;
-        getCsvHandler().setHandlesProjection(singleProjection != null);
+        final CsvHandler handler = getCsvHandler();
+        if (handler != null) {
+            handler.setHandlesProjection(singleProjection != null);
+        }
     }
 
     @Override
     public URL getNationalPortalURL() {
         try {
-            String nationalPortalPath = "";
+            String nationalPortalPath;
             String lang = Config.getPref().get("language");
             if (lang == null || lang.isEmpty()) {
                 lang = Locale.getDefault().toString();
@@ -107,7 +103,7 @@ public abstract class BelgianDataSetHandler extends SimpleDataSetHandler impleme
             }
             return new URL(BELGIAN_PORTAL.replace(OdConstants.PATTERN_LANG, lang.substring(0, 2))+nationalPortalPath); //FIXME
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            Logging.error(e);
         }
         return null;
     }

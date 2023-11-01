@@ -2,15 +2,15 @@
 package org.openstreetmap.josm.plugins.opendata.core.io.geographic;
 
 import org.geotools.referencing.CRS;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.FactoryException;
+import org.geotools.api.referencing.NoSuchAuthorityCodeException;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 
 public abstract class DefaultGeographicHandler implements GeographicHandler {
 
     private boolean useNodeMap = true;
-    private boolean checkNodeProximity = false;
-    private boolean preferMultipolygonToSimpleWay = false;
+    private boolean checkNodeProximity;
+    private boolean preferMultipolygonToSimpleWay;
 
     @Override
     public boolean preferMultipolygonToSimpleWay() {

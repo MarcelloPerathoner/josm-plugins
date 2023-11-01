@@ -3,7 +3,7 @@
   <property name="joml.version" value="1.10.5"/>
   <property name="lwjgl.version" value="3.3.3"/>
   <property name="lwjgl3-awt.version" value="0.1.8"/>
-<include file="${josm.ivysettings}" optional="true"/> <!-- optional for IDEs -->
+  <include file="${josm.ivysettings}" optional="true"/> <!-- optional for IDEs -->
   <settings defaultResolver="chained-resolver"/>
   <resolvers>
     <chain name="chained-resolver">

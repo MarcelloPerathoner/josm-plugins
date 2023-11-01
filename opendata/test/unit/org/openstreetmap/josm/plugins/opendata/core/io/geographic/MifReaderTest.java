@@ -7,27 +7,20 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openstreetmap.josm.TestUtils;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.projection.Projections;
 import org.openstreetmap.josm.plugins.opendata.core.datasets.AbstractDataSetHandler;
 import org.openstreetmap.josm.plugins.opendata.core.io.NonRegFunctionalTests;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
 import org.openstreetmap.josm.testutils.annotations.BasicPreferences;
+import org.openstreetmap.josm.testutils.annotations.Projection;
 
 /**
  * Unit tests of {@link MifReader} class.
  */
 @BasicPreferences
+@Projection
 class MifReaderTest {
-
-    /**
-     * Setup test.
-     */
-    @RegisterExtension
-    JOSMTestRules rules = new JOSMTestRules().projection();
-
     private static AbstractDataSetHandler newHandler(final String epsgCode) {
         AbstractDataSetHandler handler = new AbstractDataSetHandler() {
             @Override
@@ -53,7 +46,7 @@ class MifReaderTest {
     public void testTicket9592() throws IOException {
         File file = new File(TestUtils.getRegressionDataFile(9592, "bg.mif"));
         try (InputStream is = new FileInputStream(file)) {
-            NonRegFunctionalTests.testGeneric("#9592", MifReader.parseDataSet(is, file, newHandler("EPSG:32635"), null));
+            NonRegFunctionalTests.testGeneric("#9592", MifReader.parseDataSet(is, file, newHandler("EPSG:32635")));
         }
     }
 }

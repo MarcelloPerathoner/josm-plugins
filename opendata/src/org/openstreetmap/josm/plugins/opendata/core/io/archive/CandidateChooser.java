@@ -32,7 +32,7 @@ public class CandidateChooser extends ExtendedDialog {
         this(parent, tr("File to load"), new String[] {tr("OK"), tr("Cancel")}, candidates);
     }
 
-    private class Renderer extends DefaultListCellRenderer {
+    private static class Renderer extends DefaultListCellRenderer {
 
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value,
@@ -65,16 +65,6 @@ public class CandidateChooser extends ExtendedDialog {
         projPanel.add(fileCombo, GBC.eop().fill(GBC.HORIZONTAL).insets(0, 5, 5, 5));
         setContent(projPanel);
     }
-
-    /*public List<File> getSelectedFiles() {
-        List<File> result = new ArrayList<File>();
-        for (JCheckBox cbox : checkBoxes.keySet()) {
-            if (cbox.isSelected()) {
-                result.add(checkBoxes.get(cbox));
-            }
-        }
-        return result;
-    }*/
 
     public File getSelectedFile() {
         return (File) fileCombo.getSelectedItem();

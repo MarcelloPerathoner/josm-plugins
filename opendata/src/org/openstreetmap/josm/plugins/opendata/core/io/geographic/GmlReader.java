@@ -8,7 +8,6 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -16,12 +15,11 @@ import javax.xml.stream.XMLStreamReader;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
-import org.opengis.geometry.MismatchedDimensionException;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.TransformException;
+import org.geotools.api.geometry.MismatchedDimensionException;
+import org.geotools.api.referencing.FactoryException;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.operation.MathTransform;
+import org.geotools.api.referencing.operation.TransformException;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
@@ -34,6 +32,7 @@ import org.openstreetmap.josm.plugins.opendata.core.datasets.AbstractDataSetHand
 import org.openstreetmap.josm.plugins.opendata.core.datasets.NationalHandlers;
 import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.UserCancelException;
+import org.openstreetmap.josm.tools.XmlUtils;
 
 /**
  * Reader of GML (Geography Markup Language) files.
@@ -54,11 +53,11 @@ public class GmlReader extends GeographicReader {
 
     private final GmlHandler gmlHandler;
 
-    private XMLStreamReader parser;
+    private final XMLStreamReader parser;
 
     private int dim;
 
-    private final class CrsData {
+    private static final class CrsData {
         public CoordinateReferenceSystem crs;
         public MathTransform transform;
         public int dim;
@@ -80,10 +79,11 @@ public class GmlReader extends GeographicReader {
     public static DataSet parseDataSet(InputStream in, AbstractDataSetHandler handler, ProgressMonitor instance)
             throws IOException, XMLStreamException {
         InputStreamReader ir = UTFInputStreamReader.create(in, OdConstants.UTF8);
-        XMLStreamReader parser = XMLInputFactory.newInstance().createXMLStreamReader(ir);
+        XMLStreamReader parser = XmlUtils.newSafeXMLInputFactory().createXMLStreamReader(ir);
         try {
             return new GmlReader(parser, handler != null ? handler.getGmlHandler() : null).parseDoc(instance);
-        } catch (Exception e) {
+        } catch (XMLStreamException | GeoCrsException | FactoryException | GeoMathTransformException |
+                 TransformException e) {
             throw new IOException(e);
         }
     }
@@ -97,20 +97,19 @@ public class GmlReader extends GeographicReader {
         Component parent = instance != null ? instance.getWindowParent() : MainApplication.getMainFrame();
         while (parser.hasNext()) {
             int event = parser.next();
-            if (event == XMLStreamConstants.START_ELEMENT) {
-                if (isElement(GML_FEATURE_MEMBER)) {
-                    try {
-                        parseFeatureMember(parent);
-                    } catch (UserCancelException e) {
-                        return ds;
-                    }
+            if (event == XMLStreamConstants.START_ELEMENT && isElement(GML_FEATURE_MEMBER)) {
+                try {
+                    parseFeatureMember(parent);
+                } catch (UserCancelException e) {
+                    Logging.trace(e);
+                    return ds;
                 }
             }
         }
         return ds;
     }
 
-    private void findCRS(String srs) throws NoSuchAuthorityCodeException, FactoryException {
+    private void findCRS(String srs) throws FactoryException {
         Logging.info("Finding CRS for "+srs);
         if (gmlHandler != null) {
             crs = gmlHandler.getCrsFor(srs);
@@ -131,10 +130,8 @@ public class GmlReader extends GeographicReader {
         if (crsData == null) {
             try {
                 findCRS(srs);
-            } catch (NoSuchAuthorityCodeException e) {
-                e.printStackTrace();
             } catch (FactoryException e) {
-                e.printStackTrace();
+                Logging.error(e);
             }
             if (crs == null) {
                 throw new GeoCrsException("Unable to detect CRS for srs '"+srs+"' !");
@@ -152,7 +149,7 @@ public class GmlReader extends GeographicReader {
     private void parseFeatureMember(Component parent) throws XMLStreamException, GeoCrsException, FactoryException,
     UserCancelException, GeoMathTransformException, MismatchedDimensionException, TransformException {
         Way way = null;
-        Node node = null;
+        Node node;
         Map<String, StringBuilder> tags = new HashMap<>();
         OsmPrimitive prim = null;
         String key = null;
@@ -171,8 +168,8 @@ public class GmlReader extends GeographicReader {
                 } else if (isElement(GML_POS_LIST)) {
                     String[] tab = parser.getElementText().split(" ");
                     for (int i = 0; i < tab.length; i += dim) {
-                        Point p = geometryFactory.createPoint(new Coordinate(Double.valueOf(tab[i]), Double.valueOf(tab[i+1])));
-                        node = createOrGetNode(p, dim > 2 && !tab[i+2].equals("0") ? tab[i+2] : null);
+                        Point p = geometryFactory.createPoint(new Coordinate(Double.parseDouble(tab[i]), Double.parseDouble(tab[i+1])));
+                        node = createOrGetNode(p, dim > 2 && !"0".equals(tab[i+2]) ? tab[i+2] : null);
                         if (way != null) {
                             way.addNode(node);
                         } else {
@@ -181,7 +178,7 @@ public class GmlReader extends GeographicReader {
                     }
                 } else if (isElement(GML_COORDINATES)) {
                     String[] tab = parser.getElementText().trim().split(",");
-                    Point p = geometryFactory.createPoint(new Coordinate(Double.valueOf(tab[0]), Double.valueOf(tab[1])));
+                    Point p = geometryFactory.createPoint(new Coordinate(Double.parseDouble(tab[0]), Double.parseDouble(tab[1])));
                     node = createOrGetNode(p);
                     if (way == null) {
                         prim = node;
@@ -197,17 +194,13 @@ public class GmlReader extends GeographicReader {
                     break;
                 }
             } else if (event == XMLStreamConstants.CHARACTERS && key != null) {
-                StringBuilder sb = tags.get(key);
-                if (sb == null) {
-                    sb = new StringBuilder();
-                    tags.put(key, sb);
-                }
+                StringBuilder sb = tags.computeIfAbsent(key, k -> new StringBuilder());
                 sb.append(parser.getTextCharacters(), parser.getTextStart(), parser.getTextLength());
             }
         }
         if (prim != null) {
-            for (String k : tags.keySet()) {
-                prim.put(k, tags.get(k).toString());
+            for (Map.Entry<String, StringBuilder> entry : tags.entrySet()) {
+                prim.put(entry.getKey(), entry.getValue().toString());
             }
         }
     }

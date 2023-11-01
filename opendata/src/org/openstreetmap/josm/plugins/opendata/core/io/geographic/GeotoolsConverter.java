@@ -17,8 +17,8 @@ import java.util.Set;
 
 import javax.swing.JOptionPane;
 
-import org.geotools.data.DataStore;
-import org.geotools.data.FeatureSource;
+import org.geotools.api.data.DataStore;
+import org.geotools.api.data.FeatureSource;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.locationtech.jts.geom.Geometry;
@@ -26,14 +26,15 @@ import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
-import org.opengis.feature.Feature;
-import org.opengis.feature.GeometryAttribute;
-import org.opengis.feature.Property;
-import org.opengis.feature.type.GeometryDescriptor;
-import org.opengis.feature.type.Name;
-import org.opengis.geometry.MismatchedDimensionException;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.operation.TransformException;
+import org.locationtech.jts.io.ParseException;
+import org.geotools.api.feature.Feature;
+import org.geotools.api.feature.GeometryAttribute;
+import org.geotools.api.feature.Property;
+import org.geotools.api.feature.type.GeometryDescriptor;
+import org.geotools.api.feature.type.Name;
+import org.geotools.api.geometry.MismatchedDimensionException;
+import org.geotools.api.referencing.FactoryException;
+import org.geotools.api.referencing.operation.TransformException;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
@@ -74,11 +75,43 @@ public class GeotoolsConverter {
     public void convert(ProgressMonitor progressMonitor)
             throws IOException, FactoryException, GeoMathTransformException, TransformException, GeoCrsException {
         String[] typeNames = dataStore.getTypeNames();
-        String typeName = typeNames[0];
+        if (progressMonitor != null) {
+            progressMonitor.beginTask(tr("Loading shapefile ({0} layers)", typeNames.length), typeNames.length);
+        }
+        try {
+            for (String typeName : typeNames) {
+                FeatureSource<?, ?> featureSource = dataStore.getFeatureSource(typeName);
+                FeatureCollection<?, ?> collection = featureSource.getFeatures();
+                try {
+                    parseFeatures(progressMonitor != null ? progressMonitor.createSubTaskMonitor(1, false) : null, collection);
+                    // Geotools wraps an IOException in a RuntimeException. We want to keep parsing layers, even if we could not understand
+                    // a previous layer.
+                } catch (RuntimeException runtimeException) {
+                    if (runtimeException.getCause() instanceof IOException && runtimeException.getCause().getCause() instanceof ParseException) {
+                        Logging.error(runtimeException);
+                    } else {
+                        throw runtimeException;
+                    }
+                }
+            }
+        } finally {
+            if (progressMonitor != null) {
+                progressMonitor.finishTask();
+            }
+        }
+    }
 
-        FeatureSource<?, ?> featureSource = dataStore.getFeatureSource(typeName);
-        FeatureCollection<?, ?> collection = featureSource.getFeatures();
-
+    /**
+     * Run the actual conversion process for a collection of features
+     * @param progressMonitor The monitor to show progress on
+     * @param collection The collection to parse
+     * @throws FactoryException See {@link GeographicReader#findMathTransform(Component, boolean)}
+     * @throws GeoMathTransformException See {@link GeographicReader#findMathTransform(Component, boolean)}
+     * @throws TransformException See {@link GeographicReader#createOrGetNode(Point)}
+     * @throws GeoCrsException If the CRS cannot be detected
+     */
+    private void parseFeatures(ProgressMonitor progressMonitor, FeatureCollection<?, ?> collection)
+            throws FactoryException, GeoMathTransformException, TransformException, GeoCrsException {
         if (progressMonitor != null) {
             progressMonitor.beginTask(tr("Loading shapefile ({0} features)", collection.size()), collection.size());
         }
@@ -152,10 +185,32 @@ public class GeotoolsConverter {
             }
 
             Object geomObject = geometry.getValue();
-            if (geomObject instanceof Point) {  // TODO: Support LineString and Polygon.
+            if (geomObject instanceof Point) {
                 // Sure you could have a Set of 1 object and join these 2 branches of
                 // code, but I feel there would be a performance hit.
                 OsmPrimitive primitive = reader.createOrGetEmptyNode((Point) geomObject);
+                readNonGeometricAttributes(feature, primitive);
+            } else if (geomObject instanceof LineString) {
+                OsmPrimitive primitive = reader.createOrGetWay((LineString) geomObject);
+                readNonGeometricAttributes(feature, primitive);
+            } else if (geomObject instanceof Polygon) {
+                Polygon polygon = (Polygon) geomObject;
+                Way outer = reader.createOrGetWay(polygon.getExteriorRing());
+                Way[] inner = new Way[polygon.getNumInteriorRing()];
+                for (int i = 0; i < inner.length; i++) {
+                    inner[i] = reader.createOrGetWay(polygon.getInteriorRingN(i));
+                }
+                final OsmPrimitive primitive;
+                if (inner.length == 0) {
+                    primitive = outer;
+                } else {
+                    Relation relation = reader.createMultipolygon();
+                    GeographicReader.addWayToMp(relation, "outer", outer);
+                    for (Way iWay : inner) {
+                        GeographicReader.addWayToMp(relation, "inner", iWay);
+                    }
+                    primitive = relation;
+                }
                 readNonGeometricAttributes(feature, primitive);
             } else if (geomObject instanceof GeometryCollection) { // Deals with both MultiLineString and MultiPolygon
                 Set<OsmPrimitive> primitives = processGeometryCollection((GeometryCollection) geomObject);
@@ -198,9 +253,9 @@ public class GeotoolsConverter {
                     }
                     Way w = reader.createOrGetWay(p.getExteriorRing());
                     if (r != null) {
-                        reader.addWayToMp(r, "outer", w);
+                        GeographicReader.addWayToMp(r, "outer", w);
                         for (int j = 0; j < p.getNumInteriorRing(); j++) {
-                            reader.addWayToMp(r, "inner", reader.createOrGetWay(p.getInteriorRingN(j)));
+                            GeographicReader.addWayToMp(r, "inner", reader.createOrGetWay(p.getInteriorRingN(j)));
                         }
                     }
                     op = r != null ? r : w;
@@ -220,29 +275,25 @@ public class GeotoolsConverter {
     }
 
     private static void readNonGeometricAttributes(Feature feature, OsmPrimitive primitive) {
-        try {
-            Collection<Property> properties = feature.getProperties();
-            Map<String, String> tagMap = new LinkedHashMap<>(properties.size());
-            for (Property prop : properties) {
-                if (!(prop instanceof GeometryAttribute)) {
-                    Name name = prop.getName();
-                    Object value = prop.getValue();
-                    if (name != null && value != null) {
-                        String sName = name.toString();
-                        String sValue = value.toString();
-                        if (value instanceof Date) {
-                            sValue = new SimpleDateFormat("yyyy-MM-dd").format(value);
-                        }
-                        if (!sName.isEmpty() && !sValue.isEmpty()) {
-                            tagMap.put(sName, sValue);
-                            //primitive.put(sName, sValue);
-                        }
+        Collection<Property> properties = feature.getProperties();
+        Map<String, String> tagMap = new LinkedHashMap<>(properties.size());
+        for (Property prop : properties) {
+            if (!(prop instanceof GeometryAttribute)) {
+                Name name = prop.getName();
+                Object value = prop.getValue();
+                if (name != null && value != null) {
+                    String sName = name.toString();
+                    String sValue = value.toString();
+                    if (value instanceof Date) {
+                        sValue = new SimpleDateFormat("yyyy-MM-dd").format(value);
+                    }
+                    if (!sName.isEmpty() && !sValue.isEmpty()) {
+                        tagMap.put(sName, sValue);
+                        //primitive.put(sName, sValue);
                     }
                 }
             }
-            primitive.putAll(tagMap);
-        } catch (Exception e) {
-            Logging.error(e);
         }
+        primitive.putAll(tagMap);
     }
 }
