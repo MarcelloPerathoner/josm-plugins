@@ -4,7 +4,7 @@
     <property name="commit.message" value="Commit message"/>
     <!-- enter the *lowest* JOSM version this plugin is currently compatible with -->
     <property name="plugin.main.version" value="10899"/>
-    
+
     <property name="plugin.author" value="Don-vip"/>
     <property name="plugin.class" value="org.openstreetmap.josm.plugins.geotools.GeoToolsPlugin"/>
     <property name="plugin.description" value="Provides parts of the GeoTools library for other JOSM plugins. Not meant to be installed directly by users, but rather as a dependency for other plugins."/>
@@ -12,6 +12,7 @@
     <property name="plugin.canloadatruntime" value="true"/>
     <property name="plugin.requires" value="apache-commons;ejml;jackson;jaxb;jts"/>
     <property name="plugin.stage" value="20"/>
+<property name="plugin.minimum.java.version" value="11"/>
 
     <!-- ** include targets that all plugins have in common ** -->
     <import file="../build-common.xml"/>
@@ -100,12 +101,12 @@
 
     <!--
     **********************************************************
-    ** additional-manifest - add additional manifest entries 
+    ** additional-manifest - add additional manifest entries
     **********************************************************
     -->
     <target name="additional-manifest">
         <manifest file="MANIFEST" mode="update">
-            <!-- JAI requires a vendor name for some of its deep internals, 
+            <!-- JAI requires a vendor name for some of its deep internals,
                  see https://stackoverflow.com/a/18495658/2257172 -->
             <attribute name="Specification-Title" value="JOSM GeoTools plugin"/>
             <attribute name="Specification-Version" value="${gt.version}"/>

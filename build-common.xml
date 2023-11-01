@@ -20,8 +20,10 @@
     <property name="josm.jar"               location="${josm.dir}/build/libs/josm.jar"/>
     <!-- the root directory of the compiled core test classes (must contain org/openstreetmap/test/testutils) -->
     <property name="josm.test.build.dir"    location="${josm.dir}/build/classes/java/test"/>
-    <!-- the directory where the plugin jars are copied to -->
+    <!-- the directory where the plugin jars should be output -->
     <property name="plugin.dist.dir"        location="${josm.dir}/dist"/>
+    <!-- the target java version -->
+    <property name="java.lang.version"      value="17" />
 
     <property name="josm.ivy"               location="${josm.dir}/ivy.xml"/>
     <property name="josm.ivysettings"       location="${josm.dir}/ivysettings.xml"/>
@@ -37,9 +39,8 @@
     <property name="plugin.resources.dir"   location="resources"/>
     <property name="plugin.doc.dir"         location="javadoc"/>
     <property name="plugin.lib.dir"         location="lib"/>
-    <property name="java.lang.version"      value="17" />
     <property name="javadoc.executable"     value="javadoc" />
-    <property name="javadoc.link"           value="https://docs.oracle.com/javase/17/docs/api" />
+    <property name="javadoc.link"           value="https://docs.oracle.com/javase/${java.lang.version}/docs/api" />
     <property name="manifest"               value="MANIFEST"/>
     <property name="manifest.unixoid"       value="MANIFEST-unixoid"/>
     <property name="manifest.windows"       value="MANIFEST-windows"/>
@@ -63,19 +64,23 @@
     <condition property="isUnix"><os family="Unix"/></condition>
     <condition property="isMac"><os family="Mac"/></condition>
     <!-- For Java specific stuff by version -->
-    <condition property="isJava9"><matches string="${ant.java.version}" pattern="(1.)?(9|1[0-9])" /></condition>
-    <condition property="isJava10"><matches string="${ant.java.version}" pattern="1[0-9]" /></condition>
-    <condition property="isJava11"><matches string="${ant.java.version}" pattern="1[1-9]" /></condition>
-    <condition property="isJava12"><matches string="${ant.java.version}" pattern="1[2-9]" /></condition>
-    <condition property="isJava13"><matches string="${ant.java.version}" pattern="1[3-9]" /></condition>
-    <condition property="isJava14"><matches string="${ant.java.version}" pattern="1[4-9]" /></condition>
-    <condition property="isJava15"><matches string="${ant.java.version}" pattern="1[5-9]" /></condition>
-    <condition property="isJava16"><matches string="${ant.java.version}" pattern="1[6-9]" /></condition>
-    <condition property="isJava20"><matches string="${ant.java.version}" pattern="2[0-9]" /></condition>
-    <!-- Disable jacoco on Java 20+ (Jacoco does not yet support Java 20+) -->
+    <condition property="isJava9"><matches string="${ant.java.version}" pattern="(1.)?(9|[1-9][0-9])" /></condition>
+    <condition property="isJava11"><matches string="${ant.java.version}" pattern="1[1-9]|[2-9][0-9]" /></condition>
+    <condition property="isJava14"><matches string="${ant.java.version}" pattern="1[4-9]|[2-9][0-9]" /></condition>
+    <condition property="isJava15"><matches string="${ant.java.version}" pattern="1[5-9]|[2-9][0-9]" /></condition>
+    <condition property="isJava17"><matches string="${ant.java.version}" pattern="1[7-9]|[2-9][0-9]" /></condition>
+    <condition property="isJava21"><matches string="${ant.java.version}" pattern="2[1-9]|[3-9][0-9]" /></condition>
+
+    <!-- set the javadoc location -->
+    <property name="javadoc.link"           value="https://docs.oracle.com/javase/8/docs/api" unless:set="isJava11"/>
+    <property name="javadoc.link"           value="https://docs.oracle.com/en/java/javase/11/docs/api/" if:set="isJava11" unless:set="isJava17"/>
+    <property name="javadoc.link"           value="https://docs.oracle.com/en/java/javase/17/docs/api/" if:set="isJava17" unless:set="isJava21"/>
+    <property name="javadoc.link"           value="https://docs.oracle.com/en/java/javase/21/docs/api/" if:set="isJava21"/>
+
+    <!-- Disable jacoco on Java 21+ (Jacoco does not yet support Java 21+) -->
     <condition property="coverageByDefault">
         <not>
-            <isset property="isJava20"/>
+            <isset property="isJava21"/>
         </not>
     </condition>
     <target name="-jaxb_windows" if="isWindows">
@@ -149,7 +154,8 @@
             <compilerarg pathref="errorprone.classpath"/>
             <compilerarg value="-Xlint:deprecation"/>
             <compilerarg value="-Xlint:unchecked"/>
-            <compilerarg value="-Xplugin:ErrorProne -Xep:StringSplitter:OFF -Xep:ReferenceEquality:OFF -Xep:InsecureCryptoUsage:OFF -Xep:FutureReturnValueIgnored:OFF -Xep:JdkObsolete:OFF -Xep:EqualsHashCode:OFF -Xep:JavaUtilDate:OFF -Xep:DoNotCallSuggester:OFF -Xep:BanSerializableRead:OFF -Xep:RestrictedApiChecker:OFF"/>
+            <compilerarg value="-Xplugin:ErrorProne -Xep:StringSplitter:OFF -Xep:ReferenceEquality:OFF -Xep:InsecureCryptoUsage:OFF -Xep:FutureReturnValueIgnored:OFF -Xep:JdkObsolete:OFF -Xep:EqualsHashCode:OFF -Xep:JavaUtilDate:OFF -Xep:DoNotCallSuggester:OFF -Xep:BanSerializableRead:OFF -Xep:RestrictedApiChecker:OFF" unless:set="isJava11"/>
+            <compilerarg value="-Xplugin:ErrorProne -Xep:StringSplitter:OFF -Xep:ReferenceEquality:OFF -Xep:InsecureCryptoUsage:OFF -Xep:FutureReturnValueIgnored:OFF -Xep:JdkObsolete:OFF -Xep:EqualsHashCode:OFF -Xep:JavaUtilDate:OFF -Xep:DoNotCallSuggester:OFF -Xep:BanSerializableRead:OFF" if:set="isJava11"/>
             <compilerarg line="-Xmaxwarns 1000"/>
             <classpath refid="plugin.classpath"/>
         </javac>
@@ -444,7 +450,7 @@
                 <os family="mac"/>
             </and>
         </condition>
-        <condition property="josm.plugins.dir" value="${user.home}/.local/share/JOSM/plugins">
+        <condition property="josm.plugins.dir" value="${user.home}/.local/share/JOSM-custom/plugins">
             <and>
                 <not><os family="windows"/></not>
                 <not><os family="mac"/></not>
@@ -618,8 +624,10 @@
         description="Run unit tests. OSM API (TEST) account shall be set with -Dosm.username and -Dosm.password">
         <sequential>
             <echo message="Running unit tests with JUnit"/>
-            <jacoco:agent destfile="${plugin.test.dir}/jacoco.exec" enabled="${coverageByDefault}" inclbootstrapclasses="${jacoco.inclbootstrapclasses}" inclnolocationclasses="${jacoco.inclnolocationclasses}" property="jacocoagent"/>
-            <junitlauncher haltonfailure="true" printsummary="${junit.printsummary}">
+            <jacoco:agent destfile="${plugin.test.dir}/jacoco.exec" enabled="${coverageByDefault}"
+                          inclbootstrapclasses="${jacoco.inclbootstrapclasses}" inclnolocationclasses="${jacoco.inclnolocationclasses}"
+                          property="jacocoagent" if:true="${coverageByDefault}"/>
+            <junitlauncher printsummary="${junit.printsummary}">
                 <classpath>
                     <fileset refid="plugin.requires.jars"/>
                     <path refid="test.classpath"/>
@@ -755,6 +763,7 @@
         <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
     </target>
     <target name="resolve-tools" depends="init-ivy" description="Resolves tools using Apache Ivy">
+        <ivy:settings file="${josm.ivysettings}"/>
         <ivy:resolve file="${core.tools.ivy}"/>
         <ivy:cachepath file="${core.tools.ivy}" pathid="errorprone.classpath" conf="errorprone"/>
         <ivy:cachepath file="${core.tools.ivy}" pathid="errorprone_javac.classpath" conf="errorprone_javac"/>

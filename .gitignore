@@ -6,7 +6,6 @@
 **/test/report
 **/parsergen/
 **/javadoc/
-**/.project
 **/.vscode
 
 **/plugins/dataimport/io/tcx/
@@ -15,5 +14,3 @@
 **/plugins/routes/xml/
 **/jacoco.exec
 *~
-**/.project
-**/.classpath

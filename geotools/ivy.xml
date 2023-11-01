@@ -10,7 +10,7 @@
         <dependency org="org.geotools" name="gt-geotiff" rev="${gt.version}" conf="default->default"/>
         <dependency org="org.geotools" name="gt-main" rev="${gt.version}" conf="default->default"/>
         <dependency org="org.geotools" name="gt-metadata" rev="${gt.version}" conf="default->default"/>
-        <dependency org="org.geotools" name="gt-opengis" rev="${gt.version}" conf="default->default"/>
+        <dependency org="org.geotools" name="gt-api" rev="${gt.version}" conf="default->default"/>
         <dependency org="org.geotools" name="gt-referencing" rev="${gt.version}" conf="default->default"/>
         <dependency org="org.geotools" name="gt-shapefile" rev="${gt.version}" conf="default->default"/>
         <dependency org="org.geotools" name="gt-geopkg" rev="${gt.version}" conf="default->default"/>
