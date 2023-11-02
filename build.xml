@@ -6,10 +6,8 @@
     <condition property="isJava11"><matches string="${ant.java.version}" pattern="1[1-9]|[2-9][0-9]" /></condition>
     <!-- Specific plugins -->
     <property name="java21_plugins" value="FIT/build.xml" />
-    <property name="java17_plugins" value="maproulette/build.xml
-                                            imageio/build.xml
-                                            pmtiles/build.xml
-                                            todo/build.xml"/>
+    <property name="java17_plugins" value="imageio/build.xml
+                                           pmtiles/build.xml"/>
     <property name="java11_plugins" value="geotools/build.xml
                                            cadastre-fr/build.xml
                                            opendata/build.xml
@@ -26,7 +24,10 @@
                                             apache-http/build.xml"/>
     <property name="javafx_plugins" value="javafx/build.xml
                                            MicrosoftStreetside/build.xml"/>
-        <macrodef name="iterate">
+    <!-- plugins that don't build yet -->
+    <property name="obsolete_plugins" value="tageditor/build.xml
+                                             tagging-preset-tester/build.xml"/>
+    <macrodef name="iterate">
         <attribute name="target"/>
         <sequential>
             <subant target="@{target}" inheritall="true">
@@ -36,7 +37,7 @@
                 <filelist dir="." files="${java11_plugins}" if:set="isJava11"/>
                 <filelist dir="." files="${java17_plugins}" if:set="isJava17"/>
                 <filelist dir="." files="${java21_plugins}" if:set="isJava21"/>
-                <fileset  dir="." includes="*/build.xml" excludes="00_*/build.xml *.wip/build.xml ${javafx_plugins} ${ordered_plugins} ${java11_plugins} ${java17_plugins} ${java21_plugins} "/>
+                <fileset  dir="." includes="*/build.xml" excludes="00_*/build.xml *.wip/build.xml ${javafx_plugins} ${ordered_plugins} ${obsolete_plugins} ${java11_plugins} ${java17_plugins} ${java21_plugins} "/>
             </subant>
         </sequential>
     </macrodef>

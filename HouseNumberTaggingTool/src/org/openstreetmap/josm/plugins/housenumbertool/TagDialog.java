@@ -45,6 +45,7 @@ import org.openstreetmap.josm.data.tagging.ac.AutoCompletionItem;
 import org.openstreetmap.josm.gui.ExtendedDialog;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.tagging.ac.AutoCompComboBox;
+import org.openstreetmap.josm.gui.tagging.ac.AutoCompListener;
 import org.openstreetmap.josm.gui.tagging.ac.AutoCompletionManager;
 import org.openstreetmap.josm.gui.widgets.JosmComboBox;
 import org.openstreetmap.josm.gui.widgets.JosmTextField;
@@ -89,13 +90,13 @@ public class TagDialog extends ExtendedDialog {
 
     private static final String TEMPLATE_DATA = "/template.data";
 
-    private AutoCompComboBox<AutoCompletionItem> source;
-    private AutoCompComboBox<AutoCompletionItem> country;
-    private AutoCompComboBox<AutoCompletionItem> stateTag;
-    private AutoCompComboBox<AutoCompletionItem> suburb;
-    private AutoCompComboBox<AutoCompletionItem> city;
-    private AutoCompComboBox<AutoCompletionItem> postcode;
-    private AutoCompComboBox<AutoCompletionItem> street;
+    private AutoCompComboBox<String> source;
+    private AutoCompComboBox<String> country;
+    private AutoCompComboBox<String> stateTag;
+    private AutoCompComboBox<String> suburb;
+    private AutoCompComboBox<String> city;
+    private AutoCompComboBox<String> postcode;
+    private AutoCompComboBox<String> street;
     private JTextField housenumber;
     private JCheckBox buildingEnabled;
     private JCheckBox sourceEnabled;
@@ -187,7 +188,7 @@ public class TagDialog extends ExtendedDialog {
         sourceEnabled = generateCheckbox(TAG_SOURCE, dto.isSaveSource());
         editPanel.add(sourceEnabled, columnOne);
 
-        source = generateAutoCompTextField(acm.getTagValues(TAG_SOURCE), dto.getSource());
+        source = generateAutoCompTextField(acm.new NaiveValueAutoCompManager(TAG_SOURCE), dto.getSource());
         editPanel.add(source, columnTwo);
 
         editPanel.add(generateAcceptButton(actionEvent -> source.setSelectedItem(selection.get(TAG_SOURCE))), columnThree);
@@ -197,7 +198,7 @@ public class TagDialog extends ExtendedDialog {
         countryEnabled = generateCheckbox(TAG_ADDR_COUNTRY, dto.isSaveCountry());
         editPanel.add(countryEnabled, columnOne);
 
-        country = generateAutoCompTextField(acm.getTagValues(TAG_ADDR_COUNTRY), dto.getCountry());
+        country = generateAutoCompTextField(acm.new NaiveValueAutoCompManager(TAG_ADDR_COUNTRY), dto.getCountry());
         editPanel.add(country, columnTwo);
 
         editPanel.add(generateAcceptButton(actionEvent -> country.setSelectedItem(selection.get(TAG_ADDR_COUNTRY))), columnThree);
@@ -207,7 +208,7 @@ public class TagDialog extends ExtendedDialog {
         stateEnabled = generateCheckbox(TAG_ADDR_STATE, dto.isSaveState());
         editPanel.add(stateEnabled, columnOne);
 
-        stateTag = generateAutoCompTextField(acm.getTagValues(TAG_ADDR_STATE), dto.getState());
+        stateTag = generateAutoCompTextField(acm.new NaiveValueAutoCompManager(TAG_ADDR_STATE), dto.getState());
         editPanel.add(stateTag, columnTwo);
 
         editPanel.add(generateAcceptButton(actionEvent -> stateTag.setSelectedItem(selection.get(TAG_ADDR_STATE))), columnThree);
@@ -217,7 +218,7 @@ public class TagDialog extends ExtendedDialog {
         suburbEnabled = generateCheckbox(TAG_ADDR_SUBURB, dto.isSaveSuburb());
         editPanel.add(suburbEnabled, columnOne);
 
-        suburb = generateAutoCompTextField(acm.getTagValues(TAG_ADDR_SUBURB), dto.getSuburb());
+        suburb = generateAutoCompTextField(acm.new NaiveValueAutoCompManager(TAG_ADDR_SUBURB), dto.getSuburb());
         editPanel.add(suburb, columnTwo);
 
         editPanel.add(generateAcceptButton(actionEvent -> suburb.setSelectedItem(selection.get(TAG_ADDR_SUBURB))), columnThree);
@@ -227,7 +228,7 @@ public class TagDialog extends ExtendedDialog {
         cityEnabled = generateCheckbox(TAG_ADDR_CITY, dto.isSaveCity());
         editPanel.add(cityEnabled, columnOne);
 
-        city = generateAutoCompTextField(acm.getTagValues(TAG_ADDR_CITY), dto.getCity());
+        city = generateAutoCompTextField(acm.new NaiveValueAutoCompManager(TAG_ADDR_CITY), dto.getCity());
         editPanel.add(city, columnTwo);
 
         editPanel.add(generateAcceptButton(actionEvent -> city.setSelectedItem(selection.get(TAG_ADDR_CITY))), columnThree);
@@ -237,7 +238,7 @@ public class TagDialog extends ExtendedDialog {
         zipEnabled = generateCheckbox(TAG_ADDR_POSTCODE, dto.isSavePostcode());
         editPanel.add(zipEnabled, columnOne);
 
-        postcode = generateAutoCompTextField(acm.getTagValues(TAG_ADDR_POSTCODE), dto.getPostcode());
+        postcode = generateAutoCompTextField(acm.new NaiveValueAutoCompManager(TAG_ADDR_POSTCODE), dto.getPostcode());
         editPanel.add(postcode, columnTwo);
 
         editPanel.add(generateAcceptButton(actionEvent -> postcode.setSelectedItem(selection.get(TAG_ADDR_POSTCODE))), columnThree);
@@ -266,7 +267,7 @@ public class TagDialog extends ExtendedDialog {
         if (dto.isTagStreet()) {
             street = generateAutoCompTextField(getPossibleStreets(), dto.getStreet());
         } else {
-            street = generateAutoCompTextField(acm.getTagValues(TAG_ADDR_PLACE), dto.getStreet());
+            street = generateAutoCompTextField(acm.new NaiveValueAutoCompManager(TAG_ADDR_PLACE), dto.getStreet());
         }
         editPanel.add(street, columnTwo);
 
@@ -332,9 +333,18 @@ public class TagDialog extends ExtendedDialog {
         return button;
     }
 
-    private static AutoCompComboBox<AutoCompletionItem> generateAutoCompTextField(Collection<AutoCompletionItem> tagValues, String selected) {
-        AutoCompComboBox<AutoCompletionItem> comboBox = new AutoCompComboBox<>();
-        comboBox.getModel().addAllElements(tagValues);
+    private static AutoCompComboBox<String> generateAutoCompTextField(AutoCompListener l, String selected) {
+        AutoCompComboBox<String> comboBox = new AutoCompComboBox<>();
+        comboBox.getEditorComponent().addAutoCompListener(l);
+        comboBox.setPreferredSize(new Dimension(200, 24));
+        comboBox.setEditable(true);
+        comboBox.setSelectedItem(selected);
+        return comboBox;
+    }
+
+    private static AutoCompComboBox<String> generateAutoCompTextField(Collection<String> l, String selected) {
+        AutoCompComboBox<String> comboBox = new AutoCompComboBox<>();
+        comboBox.getModel().addAllElements(l);
         comboBox.setPreferredSize(new Dimension(200, 24));
         comboBox.setEditable(true);
         comboBox.setSelectedItem(selected);
@@ -428,7 +438,7 @@ public class TagDialog extends ExtendedDialog {
         setVisible(false);
     }
 
-    private static String getAutoCompletingComboBoxValue(AutoCompComboBox<AutoCompletionItem> box) {
+    private static String getAutoCompletingComboBoxValue(AutoCompComboBox<String> box) {
         Object item = box.getSelectedItem();
         if (item != null) {
             if (item instanceof String) {
@@ -572,11 +582,11 @@ public class TagDialog extends ExtendedDialog {
      * Generates a list of all visible names of highways in order to do autocompletion on the road name.
      * @return The possible streets for the current edit dataset
      */
-    private static Collection<AutoCompletionItem> getPossibleStreets() {
-        Set<AutoCompletionItem> names = new TreeSet<>();
+    private static Collection<String> getPossibleStreets() {
+        Set<String> names = new TreeSet<>();
         for (OsmPrimitive osm : MainApplication.getLayerManager().getEditDataSet().allNonDeletedPrimitives()) {
             if (osm.getKeys() != null && osm.keySet().contains("highway") && osm.keySet().contains("name")) {
-                names.add(new AutoCompletionItem(osm.get("name")));
+                names.add(osm.get("name"));
             }
         }
         return names;
@@ -626,7 +636,7 @@ public class TagDialog extends ExtendedDialog {
             if (streetRadio.isSelected()) {
                 street.getModel().addAllElements(getPossibleStreets());
             } else {
-                street.getModel().addAllElements(acm.getTagValues(TAG_ADDR_PLACE));
+                street.getEditorComponent().addAutoCompListener(acm.new NaiveValueAutoCompManager(TAG_ADDR_PLACE));
             }
         }
     }

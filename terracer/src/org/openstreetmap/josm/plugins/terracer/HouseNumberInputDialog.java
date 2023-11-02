@@ -26,7 +26,6 @@ import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmDataManager;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Way;
-import org.openstreetmap.josm.data.tagging.ac.AutoCompletionItem;
 import org.openstreetmap.josm.gui.ExtendedDialog;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.tagging.ac.AutoCompComboBox;
@@ -69,7 +68,7 @@ public class HouseNumberInputDialog extends ExtendedDialog {
     private JLabel numbersLabel;
     JTextField numbers;
     AutoCompComboBox<String> streetComboBox;
-    AutoCompComboBox<AutoCompletionItem> buildingComboBox;
+    AutoCompComboBox<String> buildingComboBox;
     JTextField segments;
     JTextArea messageLabel;
     JosmComboBox<String> interpolationType;
@@ -285,7 +284,7 @@ public class HouseNumberInputDialog extends ExtendedDialog {
     /**
      * This method initializes street
      *
-     * @return AutoCompletingComboBox
+     * @return AutoCompComboBox
      */
     private AutoCompComboBox<String> getStreet() {
         if (streetComboBox == null) {
@@ -300,13 +299,14 @@ public class HouseNumberInputDialog extends ExtendedDialog {
     /**
      * This method initializes building
      *
-     * @return AutoCompletingComboBox
+     * @return AutoCompComboBox
      */
-    private AutoCompComboBox<AutoCompletionItem> getBuilding() {
+    private AutoCompComboBox<String> getBuilding() {
         if (buildingComboBox == null) {
             buildingComboBox = new AutoCompComboBox<>();
             buildingComboBox.getModel().addAllElements(
-                    AutoCompletionManager.of(OsmDataManager.getInstance().getEditDataSet()).getTagValues("building"));
+                AutoCompletionManager.of(OsmDataManager.getInstance().getEditDataSet()).getDataSetValues("building")
+            );
             buildingComboBox.setEditable(true);
             if (buildingType != null && !buildingType.isEmpty()) {
                 buildingComboBox.setSelectedItem(buildingType);

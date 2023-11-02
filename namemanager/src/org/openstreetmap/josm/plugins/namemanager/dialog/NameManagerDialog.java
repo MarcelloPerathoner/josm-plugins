@@ -41,8 +41,7 @@ import javax.swing.KeyStroke;
 
 import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.gui.MainApplication;
-import org.openstreetmap.josm.gui.tagging.ac.AutoCompletingTextField;
-import org.openstreetmap.josm.gui.tagging.ac.AutoCompletionList;
+import org.openstreetmap.josm.gui.tagging.ac.AutoCompTextField;
 import org.openstreetmap.josm.gui.tagging.ac.AutoCompletionManager;
 import org.openstreetmap.josm.plugins.namemanager.countryData.Country;
 import org.openstreetmap.josm.plugins.namemanager.countryData.CountryDataMemory;
@@ -51,9 +50,9 @@ import org.openstreetmap.josm.tools.ImageProvider;
 
 /**
  * Plugin's dialog box. Singleton class.
- * 
+ *
  * @author Rafal Jachowicz, Harman/Becker Automotive Systems (master's thesis)
- * 
+ *
  */
 public final class NameManagerDialog extends JDialog {
 
@@ -91,11 +90,11 @@ public final class NameManagerDialog extends JDialog {
     private JLabel labelLevel6;
     private JTextField level6;
     private JLabel labelTagNameAM;
-    private AutoCompletingTextField tagNameAM;
+    private AutoCompTextField<String> tagNameAM;
     private JLabel labelTagNameD;
-    private AutoCompletingTextField tagNameD;
+    private AutoCompTextField<String> tagNameD;
     private JLabel labelTagValueAM;
-    private AutoCompletingTextField tagValueAM;
+    private AutoCompTextField<String> tagValueAM;
     private JCheckBox buildings;
     private JButton addModifyButton;
     private JButton deleteButton;
@@ -171,30 +170,15 @@ public final class NameManagerDialog extends JDialog {
         administrativePanel.add(saveButton);
         administrativePanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
+        AutoCompletionManager am = AutoCompletionManager.of(MainApplication.getLayerManager().getEditLayer().data);
         JPanel addModifyPanel = new JPanel();
         addModifyPanel.setLayout(new BoxLayout(addModifyPanel, BoxLayout.PAGE_AXIS));
         labelTagNameAM = new JLabel(tr(TAG_NAME));
-        tagNameAM = new AutoCompletingTextField();
-        AutoCompletionList list = new AutoCompletionList();
-        AutoCompletionManager.of(MainApplication.getLayerManager().getEditLayer().data).populateWithKeys(list);
-        tagNameAM.setAutoCompletionList(list);
+        tagNameAM = new AutoCompTextField<>();
+        tagNameAM.addAutoCompListener(am.new NaiveKeyAutoCompManager());
         labelTagValueAM = new JLabel(tr(TAG_VALUE));
-        tagValueAM = new AutoCompletingTextField();
-        tagNameAM.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyTyped(KeyEvent arg0) {
-                if (!"".equals(tagNameAM.getText())) {
-                    AutoCompletionList list = tagValueAM.getAutoCompletionList();
-                    if (list == null) {
-                        list = new AutoCompletionList();
-                    }
-                    list.clear();
-                    AutoCompletionManager.of(MainApplication.getLayerManager().getEditLayer().data)
-                        .populateWithTagValues(list, tagNameAM.getText());
-                    tagValueAM.setAutoCompletionList(list);
-                }
-            }
-        });
+        tagValueAM = new AutoCompTextField<>();
+        tagValueAM.addAutoCompListener(am.new NaiveValueAutoCompManager(() -> tagNameAM.getText()));
         addModifyButton = new JButton(new AddModifyAction());
         addModifyPanel.add(Box.createRigidArea(new Dimension(0, 20)));
         addModifyPanel.add(labelTagNameAM);
@@ -211,8 +195,8 @@ public final class NameManagerDialog extends JDialog {
         JPanel deletePanel = new JPanel();
         deletePanel.setLayout(new BoxLayout(deletePanel, BoxLayout.PAGE_AXIS));
         labelTagNameD = new JLabel(tr(TAG_NAME));
-        tagNameD = new AutoCompletingTextField();
-        tagNameD.setAutoCompletionList(list);
+        tagNameD = new AutoCompTextField<>();
+        tagNameD.addAutoCompListener(am.new NaiveKeyAutoCompManager());
         deleteButton = new JButton(new DeleteAction());
         deletePanel.add(Box.createRigidArea(new Dimension(0, 20)));
         deletePanel.add(labelTagNameD);
@@ -326,7 +310,7 @@ public final class NameManagerDialog extends JDialog {
 
     /**
      * Gets reference to the singleton object.
-     * 
+     *
      * @return Singleton object of the {@link NameManagerDialog} class.
      */
     public static NameManagerDialog getInstance() {
@@ -340,7 +324,7 @@ public final class NameManagerDialog extends JDialog {
 
     /**
      * This method centers the dialog window on the screen.
-     * 
+     *
      * @param dialog
      *            is the {@link NameManagerDialog} object
      */

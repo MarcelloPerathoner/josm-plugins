@@ -46,8 +46,7 @@ import org.openstreetmap.josm.data.preferences.NamedColorProperty;
 import org.openstreetmap.josm.gui.ExtendedDialog;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
-import org.openstreetmap.josm.gui.tagging.ac.AutoCompletingTextField;
-import org.openstreetmap.josm.gui.tagging.ac.AutoCompletionList;
+import org.openstreetmap.josm.gui.tagging.ac.AutoCompTextField;
 import org.openstreetmap.josm.gui.tagging.ac.AutoCompletionManager;
 import org.openstreetmap.josm.gui.util.HighlightHelper;
 import org.openstreetmap.josm.gui.util.TableHelper;
@@ -196,10 +195,9 @@ public class MultiTagDialog extends ExtendedDialog implements DataSelectionListe
         AutoCompletionManager autocomplete = AutoCompletionManager.of(l.data);
         for (int i = 0; i < tableModel.mainTags.length; i++) {
             if (tableModel.isSpecialTag[i]) continue;
-            AutoCompletingTextField tf = new AutoCompletingTextField(0, false);
-            AutoCompletionList acList = new AutoCompletionList();
-            autocomplete.populateWithTagValues(acList, tableModel.mainTags[i]);
-            tf.setAutoCompletionList(acList);
+            AutoCompTextField<String> tf = new AutoCompTextField<>(0, false);
+            String key = tableModel.mainTags[i];
+            tf.addAutoCompListener(autocomplete.new NaiveValueAutoCompManager(key));
             tbl.getColumnModel().getColumn(i+1).setCellEditor(tf);
         }
     }

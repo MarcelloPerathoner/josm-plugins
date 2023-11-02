@@ -439,12 +439,12 @@
     -->
     <target name="install" depends="dist">
         <property environment="env"/>
-        <condition property="josm.plugins.dir" value="${env.APPDATA}/JOSM/plugins">
+        <condition property="josm.plugins.dir" value="${env.APPDATA}/JOSM-custom/plugins">
             <and>
                 <os family="windows"/>
             </and>
         </condition>
-        <condition property="josm.plugins.dir" value="${user.home}/Library/JOSM/plugins">
+        <condition property="josm.plugins.dir" value="${user.home}/Library/JOSM-custom/plugins">
             <and>
                 <os family="mac"/>
             </and>

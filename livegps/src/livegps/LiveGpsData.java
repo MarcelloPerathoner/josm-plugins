@@ -180,7 +180,7 @@ public class LiveGpsData {
             if (ds != null)
                 Geometry.getClosestPrimitive(n, ds.getWays());
             if (way != null) {
-                wayString = way.getDisplayName(new DefaultNameFormatter() {
+                wayString = way.getDisplayName(new DefaultNameFormatter(null) {
                      @Override
                      protected void decorateNameWithId(StringBuilder name, IPrimitive primitive) {
                      }
