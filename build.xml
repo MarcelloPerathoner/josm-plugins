@@ -21,23 +21,29 @@
                                             utilsplugin2/build.xml
                                             log4j/build.xml
                                             apache-commons/build.xml
-                                            apache-http/build.xml"/>
+                                            apache-http/build.xml
+                                            austriaaddresshelper/build.xml"/>
     <property name="javafx_plugins" value="javafx/build.xml
                                            MicrosoftStreetside/build.xml"/>
     <!-- plugins that don't build yet -->
     <property name="obsolete_plugins" value="tageditor/build.xml
                                              tagging-preset-tester/build.xml"/>
+    <!-- We are dropping Java 8 support in January 2024 - these have issues compiling with Java 8, but not with Java 11+ targeting Java 8 -->
+    <!-- Note: Mapillary was in ordered_plugins -->
+    <property name="borked_java8_compilation" value="Dxf-Import/build.xml
+                                                     photo_geotagging/build.xml" />
     <macrodef name="iterate">
         <attribute name="target"/>
         <sequential>
             <subant target="@{target}" inheritall="true">
                 <filelist dir="." files="${ordered_plugins}"/>
+                <filelist dir="." files="${borked_java8_compilation}" if:set="isJava11"/>
                 <!-- Build JavaFX plugins only with Java 11+ -->
                 <filelist dir="." files="${javafx_plugins}" if:set="isJava11"/>
                 <filelist dir="." files="${java11_plugins}" if:set="isJava11"/>
                 <filelist dir="." files="${java17_plugins}" if:set="isJava17"/>
                 <filelist dir="." files="${java21_plugins}" if:set="isJava21"/>
-                <fileset  dir="." includes="*/build.xml" excludes="00_*/build.xml *.wip/build.xml ${javafx_plugins} ${ordered_plugins} ${obsolete_plugins} ${java11_plugins} ${java17_plugins} ${java21_plugins} "/>
+                <fileset  dir="." includes="*/build.xml" excludes="00_*/build.xml *.wip/build.xml ${borked_java8_compilation} ${javafx_plugins} ${ordered_plugins} ${java11_plugins} ${java17_plugins} ${java21_plugins} ${obsolete_plugins} "/>
             </subant>
         </sequential>
     </macrodef>
