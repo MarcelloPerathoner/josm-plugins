@@ -21,8 +21,7 @@
                                             utilsplugin2/build.xml
                                             log4j/build.xml
                                             apache-commons/build.xml
-                                            apache-http/build.xml
-                                            austriaaddresshelper/build.xml"/>
+                                            apache-http/build.xml"/>
     <property name="javafx_plugins" value="javafx/build.xml
                                            MicrosoftStreetside/build.xml"/>
     <!-- plugins that don't build yet -->
