@@ -29,8 +29,7 @@
                                              tagging-preset-tester/build.xml"/>
     <!-- We are dropping Java 8 support in January 2024 - these have issues compiling with Java 8, but not with Java 11+ targeting Java 8 -->
     <!-- Note: Mapillary was in ordered_plugins -->
-    <property name="borked_java8_compilation" value="Dxf-Import/build.xml
-                                                     photo_geotagging/build.xml" />
+    <property name="borked_java8_compilation" value="photo_geotagging/build.xml" />
     <macrodef name="iterate">
         <attribute name="target"/>
         <sequential>
