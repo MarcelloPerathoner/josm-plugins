@@ -13,4 +13,6 @@
 **/plugins/ohe/parser/
 **/plugins/routes/xml/
 **/jacoco.exec
+
+*/MANIFEST*
 *~
