@@ -23,7 +23,7 @@ public class ReverterUploadHook implements UploadHook {
      * @param info plugin information
      */
     public ReverterUploadHook(PluginInformation info) {
-        pluginString = "reverter_plugin/" + info.version;
+        pluginString = "reverter_plugin/" + info.getVersion();
     }
 
     @Override

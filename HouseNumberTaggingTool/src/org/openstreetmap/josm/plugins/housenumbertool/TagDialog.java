@@ -161,7 +161,7 @@ public class TagDialog extends ExtendedDialog {
         editPanel.add(labelExistingValues, GBC.std().span(3).weight(0, 0).grid(5, 0).insets(0, 5, 10, 5));
 
         JButton getAllButton = new JButton("<<");
-        getAllButton.setPreferredSize(new Dimension(60, 24));
+        // getAllButton.setPreferredSize(new Dimension(60, 24));
         getAllButton.setToolTipText(tr("Accept all existing values"));
         getAllButton.addActionListener(actionEvent -> acceptAllExistingValues());
         editPanel.add(getAllButton, GBC.eol().grid(7, 0).anchor(GridBagConstraints.EAST).insets(0, 5, 10, 5));
@@ -274,11 +274,11 @@ public class TagDialog extends ExtendedDialog {
         editPanel.add(generateAcceptButton(actionEvent -> updateStreetOrPlaceValues()), columnThree);
 
         JTextField streetOrPlace = generateTextField(getStreetOrPlaceTag());
-        streetOrPlace.setPreferredSize(new Dimension(50, 24));
+        // streetOrPlace.setPreferredSize(new Dimension(50, 24));
         editPanel.add(streetOrPlace, GBC.std().weight(0, 0).fill(GridBagConstraints.HORIZONTAL).insets(5, 5, 0, 5));
 
         JTextField existingStreet = generateTextField(getStreetOrPlaceValue());
-        existingStreet.setPreferredSize(new Dimension(100, 24));
+        // existingStreet.setPreferredSize(new Dimension(100, 24));
         editPanel.add(existingStreet, GBC.eol().weight(1, 0).insets(5, 5, 0, 5).fill(GridBagConstraints.HORIZONTAL));
         // housenumber
         housenumberEnabled = generateCheckbox(TAG_ADDR_HOUSENUMBER, dto.isSaveHousenumber());
@@ -327,7 +327,7 @@ public class TagDialog extends ExtendedDialog {
      */
     private static JButton generateAcceptButton(ActionListener listener) {
         JButton button = new JButton("<");
-        button.setPreferredSize(new Dimension(45, 24));
+        // button.setPreferredSize(new Dimension(45, 24));
         button.setToolTipText(tr("Accept existing value"));
         button.addActionListener(listener);
         return button;
@@ -336,7 +336,7 @@ public class TagDialog extends ExtendedDialog {
     private static AutoCompComboBox<String> generateAutoCompTextField(AutoCompListener l, String selected) {
         AutoCompComboBox<String> comboBox = new AutoCompComboBox<>();
         comboBox.getEditorComponent().addAutoCompListener(l);
-        comboBox.setPreferredSize(new Dimension(200, 24));
+        // comboBox.setPreferredSize(new Dimension(200, 24));
         comboBox.setEditable(true);
         comboBox.setSelectedItem(selected);
         return comboBox;
@@ -345,7 +345,7 @@ public class TagDialog extends ExtendedDialog {
     private static AutoCompComboBox<String> generateAutoCompTextField(Collection<String> l, String selected) {
         AutoCompComboBox<String> comboBox = new AutoCompComboBox<>();
         comboBox.getModel().addAllElements(l);
-        comboBox.setPreferredSize(new Dimension(200, 24));
+        // comboBox.setPreferredSize(new Dimension(200, 24));
         comboBox.setEditable(true);
         comboBox.setSelectedItem(selected);
         return comboBox;
@@ -359,7 +359,7 @@ public class TagDialog extends ExtendedDialog {
     private static JosmTextField generateTextField(String startingText) {
         JosmTextField textField = new JosmTextField();
         textField.setText(startingText);
-        textField.setPreferredSize(new Dimension(200, 24));
+        // textField.setPreferredSize(new Dimension(200, 24));
         textField.setEditable(false);
         return textField;
     }
@@ -633,6 +633,7 @@ public class TagDialog extends ExtendedDialog {
 
         @Override
         public void itemStateChanged(ItemEvent e) {
+            street.getModel().removeAllElements();
             if (streetRadio.isSelected()) {
                 street.getModel().addAllElements(getPossibleStreets());
             } else {

@@ -12,16 +12,17 @@
 -->
 <project name="plugin_common" basedir="." xmlns:jacoco="antlib:org.jacoco.ant" xmlns:if="ant:if" xmlns:unless="ant:unless" xmlns:ivy="antlib:org.apache.ivy.ant">
     <property environment="env"/>
-    <property name="env.JOSM_DIR" value="../../core"/> <!-- if not found in enviroment -->
+    <property name="env.JOSM_DIR"           value="../../core"/>    <!-- if not found in enviroment -->
+    <property name="env.PLUGIN_DIST_DIR"    value="../build/libs"/> <!-- if not found in enviroment -->
 
     <!-- the directory where josm core is checked out -->
     <property name="josm.dir"               location="${env.JOSM_DIR}"/>
+    <!-- the directory where the plugin jars should be output -->
+    <property name="plugin.dist.dir"        location="${env.PLUGIN_DIST_DIR}"/>
     <!-- the josm.jar to build the plugins against -->
     <property name="josm.jar"               location="${josm.dir}/build/libs/josm.jar"/>
     <!-- the root directory of the compiled core test classes (must contain org/openstreetmap/test/testutils) -->
     <property name="josm.test.build.dir"    location="${josm.dir}/build/classes/java/test"/>
-    <!-- the directory where the plugin jars should be output -->
-    <property name="plugin.dist.dir"        location="${josm.dir}/dist"/>
     <!-- the target java version -->
     <property name="java.lang.version"      value="17" />
 
@@ -252,9 +253,15 @@
         <antcall target="build-jar" />
         <jar destfile="${plugin.sources.jar}" basedir="${plugin.src.dir}" level="9"/>
         <jar destfile="${plugin.javadoc.jar}" basedir="${plugin.doc.dir}" level="9"/>
+        <copy todir="${plugin.dist.dir}" failonerror="no">
+            <fileset dir="." includes="${manifest}*" />
+            <globmapper from="*" to="${ant.project.name}.*" />
+        </copy>
+        <!--
         <delete failonerror="no">
             <fileset dir="." includes="${manifest}*" />
         </delete>
+        -->
         <antcall target="post-dist" />
     </target>
     <target name="build-jar">
@@ -431,6 +438,7 @@
         <delete file="${plugin.jar}"/>
         <delete file="${plugin.sources.jar}"/>
         <delete file="${plugin.javadoc.jar}"/>
+        <delete file="${manifest}*"/>
     </target>
     <!--
     **********************************************************
