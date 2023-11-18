@@ -253,15 +253,9 @@
         <antcall target="build-jar" />
         <jar destfile="${plugin.sources.jar}" basedir="${plugin.src.dir}" level="9"/>
         <jar destfile="${plugin.javadoc.jar}" basedir="${plugin.doc.dir}" level="9"/>
-        <copy todir="${plugin.dist.dir}" failonerror="no">
-            <fileset dir="." includes="${manifest}*" />
-            <globmapper from="*" to="${ant.project.name}.*" />
-        </copy>
-        <!--
         <delete failonerror="no">
             <fileset dir="." includes="${manifest}*" />
         </delete>
-        -->
         <antcall target="post-dist" />
     </target>
     <target name="build-jar">

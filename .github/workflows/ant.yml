@@ -51,17 +51,15 @@ jobs:
           ant dist
           cd ..
 
-      - name: Generate MANIFEST
-        id: manifest
-        run: |
-          cd plugins/build/libs
-          cat *.MANIFEST > MANIFEST
-          cd ../../..
-
       - name: Generate release tag
         id: tag
         run: |
           echo "RELEASE_TAG=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+
+      - name: Generate MANIFEST
+        id: manifest
+        run: |
+          00_scripts/manifest.py --icons --root-dir plugins/build/libs *.jar > plugins/build/libs/MANIFEST
 
       - name: Release
         uses: softprops/action-gh-release@v1
