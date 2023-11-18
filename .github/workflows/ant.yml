@@ -27,23 +27,18 @@ jobs:
           java-version: ${{ matrix.java }}
 
       - name: Checkout Core
-        uses: actions/checkout@v4
-        with:
-          repository: 'MarcelloPerathoner/josm'
-          ref: develop
-          path: 'core'
+        run: |
+          git clone --branch develop --depth=1 https://github.com/MarcelloPerathoner/josm.git core
 
       - name: Checkout Plugins
-        uses: actions/checkout@v4
-        with:
-          repository: 'MarcelloPerathoner/josm-plugins'
-          ref: develop
-          path: 'plugins'
+        run: |
+          git clone --branch develop --depth=1 https://github.com/MarcelloPerathoner/josm-plugins.git plugins
 
       - name: Build Core
         run: |
           cd core
           ./gradlew jar
+          echo "JOSM_DIR=$(pwd)" >> $GITHUB_ENV
           cd ..
 
       - name: Build Plugins
@@ -60,7 +55,9 @@ jobs:
       - name: Generate MANIFEST
         id: manifest
         run: |
-          00_scripts/manifest.py --icons --root-dir plugins/build/libs *.jar > plugins/build/libs/MANIFEST
+          cd plugins
+          python 00_scripts/manifest.py --icons --root-dir build/libs *.jar > build/libs/MANIFEST
+          cd ..
 
       - name: Release
         uses: softprops/action-gh-release@v1
