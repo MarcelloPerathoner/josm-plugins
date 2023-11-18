@@ -27,17 +27,18 @@ jobs:
           java-version: ${{ matrix.java }}
 
       - name: Checkout Core
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: 'MarcelloPerathoner/josm'
+          ref: develop
           path: 'core'
-          fetch-depth: 256
 
       - name: Checkout Plugins
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
+          repository: 'MarcelloPerathoner/josm-plugins'
+          ref: develop
           path: 'plugins'
-          fetch-depth: 256
 
       - name: Build Core
         run: |
